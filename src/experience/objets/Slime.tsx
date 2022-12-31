@@ -10,6 +10,7 @@ import { ThreeEvent, useFrame } from '@react-three/fiber'
 
 import { useControls } from 'leva'
 
+import CustomMaterial from '../materials/CustomMaterial'
 import fragmentShaderValue from './drawAgents.glsl'
 import fragmentShaderAgents from './moveAgents.glsl'
 import Sphere from './Sphere'
@@ -267,7 +268,7 @@ export default function Slime() {
       {computeRenderer && positionTexture && (
         <mesh position-x={-20}>
           <planeGeometry args={[10, 10]} />
-          <meshBasicMaterial map={positionTexture} />
+          <CustomMaterial map={positionTexture} />
         </mesh>
       )}
     </>

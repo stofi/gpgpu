@@ -30,7 +30,10 @@ const textureHandler = (texture: THREE.Texture | THREE.Texture[]) => {
   texture.needsUpdate = true
 }
 
-export default function CustomMaterial(props: { color?: string }) {
+export default function CustomMaterial(props: {
+  map?: THREE.Texture
+  color?: string
+}) {
   const materialRef = useRef<THREE.ShaderMaterial | null>(null)
 
   // const [albedo, roughness, normal] = useTexture(textures, textureHandler)
@@ -56,6 +59,7 @@ export default function CustomMaterial(props: { color?: string }) {
   return (
     <CustomShaderMaterial
       color={props.color}
+      map={props.map}
       baseMaterial={THREE.MeshStandardMaterial}
       ref={materialRef}
       vertexShader={vertexShader}
