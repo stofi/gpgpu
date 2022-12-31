@@ -2,6 +2,9 @@ uniform float time;
 uniform float delta;
 uniform int count;
 uniform float fade;
+uniform vec3 redColor;
+uniform vec3 greenColor;
+uniform vec3 blueColor;
 
 const int NUM_DIRECTIONS = 8;
 vec2 directions[NUM_DIRECTIONS] = vec2[](vec2(0.0, 1.0 / resolution.y), vec2(0.0, -1.0 / resolution.y), vec2(1.0 / resolution.x, 0.0), vec2(-1.0 / resolution.x, 0.0), vec2(1.0 / resolution.x, 1.0 / resolution.y), vec2(-1.0 / resolution.x, 1.0 / resolution.y), vec2(1.0 / resolution.x, -1.0 / resolution.y), vec2(-1.0 / resolution.x, -1.0 / resolution.y));
@@ -34,11 +37,11 @@ void main() {
 
     vec3 color = vec3(0.0);
     if(isRedGroup) {
-      color = vec3(1.0, 0.0, 0.0);
+      color = redColor;
     } else if(isGreenGroup) {
-      color = vec3(0.0, 1.0, 0.0);
+      color = greenColor;
     } else if(isBlueGroup) {
-      color = vec3(0.0, 0.0, 1.0);
+      color = blueColor;
     }
 
     // calculate the distance to the agent

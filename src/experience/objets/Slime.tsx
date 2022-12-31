@@ -25,6 +25,9 @@ export default function Slime() {
     agentSpeed,
     agentRandomness,
     fade,
+    redColor,
+    greenColor,
+    blueColor,
   } = useControls({
     agentSampleDistance: {
       value: 50,
@@ -60,6 +63,18 @@ export default function Slime() {
       max: 1,
       step: 0.01,
       label: 'Fade',
+    },
+    redColor: {
+      value: '#ff0000',
+      label: 'Red',
+    },
+    greenColor: {
+      value: '#00ff00',
+      label: 'Green',
+    },
+    blueColor: {
+      value: '#0000ff',
+      label: 'Blue',
     },
   })
 
@@ -125,6 +140,9 @@ export default function Slime() {
     click: { value: new THREE.Vector2(0, 0) },
     isClicked: { value: false },
     fade: { value: 0.0 },
+    redColor: { value: new THREE.Color('#ff0000') },
+    greenColor: { value: new THREE.Color('#00ff00') },
+    blueColor: { value: new THREE.Color('#00ff00') },
   })
 
   const [agentUniforms, setAgentUniforms] = useState<{
@@ -136,6 +154,10 @@ export default function Slime() {
     sampleSpread: { value: 0.0 },
     randomness: { value: 0.0 },
     speed: { value: 0.0 },
+    fade: { value: 0.0 },
+    redColor: { value: new THREE.Color('#ff0000') },
+    greenColor: { value: new THREE.Color('#00ff00') },
+    blueColor: { value: new THREE.Color('#00ff00') },
   })
 
   const initGpuCompute = (gl: THREE.WebGLRenderer) => {
@@ -183,6 +205,18 @@ export default function Slime() {
     valueVariable.material.uniforms.count = { value: AGENT_COUNT }
     valueVariable.material.uniforms.fade = { value: 0.0 }
 
+    valueVariable.material.uniforms.redColor = {
+      value: new THREE.Color('#ff0000'),
+    }
+
+    valueVariable.material.uniforms.greenColor = {
+      value: new THREE.Color('#00ff00'),
+    }
+
+    valueVariable.material.uniforms.blueColor = {
+      value: new THREE.Color('#0000ff'),
+    }
+
     agentsVariable.material.uniforms.time = { value: 0.0 }
     agentsVariable.material.uniforms.delta = { value: 0.0 }
     agentsVariable.material.uniforms.count = { value: AGENT_COUNT }
@@ -190,6 +224,20 @@ export default function Slime() {
     agentsVariable.material.uniforms.sampleSpread = { value: 1 / 6 }
     agentsVariable.material.uniforms.randomness = { value: 0.1 }
     agentsVariable.material.uniforms.speed = { value: 1.0 }
+
+    agentsVariable.material.uniforms.fade = { value: 0.0 }
+
+    agentsVariable.material.uniforms.redColor = {
+      value: new THREE.Color('#ff0000'),
+    }
+
+    agentsVariable.material.uniforms.greenColor = {
+      value: new THREE.Color('#00ff00'),
+    }
+
+    agentsVariable.material.uniforms.blueColor = {
+      value: new THREE.Color('#0000ff'),
+    }
 
     setComputeUniforms(valueVariable.material.uniforms)
     setAgentUniforms(agentsVariable.material.uniforms)
@@ -216,12 +264,31 @@ export default function Slime() {
       computeUniforms.delta.value = now - time
       computeUniforms.fade.value = fade
 
+      if (redColor && computeUniforms.redColor) {
+        computeUniforms.redColor.value = new THREE.Color(redColor)
+
+        agentUniforms.redColor.value = new THREE.Color(redColor)
+      }
+
+      if (greenColor) {
+        computeUniforms.greenColor.value = new THREE.Color(greenColor)
+
+        agentUniforms.greenColor.value = new THREE.Color(greenColor)
+      }
+
+      if (blueColor) {
+        computeUniforms.blueColor.value = new THREE.Color(blueColor)
+
+        agentUniforms.blueColor.value = new THREE.Color(blueColor)
+      }
+
       agentUniforms.time.value = now
       agentUniforms.delta.value = now - time
       agentUniforms.sampleDistance.value = agentSampleDistance
       agentUniforms.sampleSpread.value = agentSampleSpread
       agentUniforms.randomness.value = agentRandomness
       agentUniforms.speed.value = agentSpeed
+      agentUniforms.fade.value = fade
 
       setTime(now)
 

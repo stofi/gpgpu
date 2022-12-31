@@ -5,6 +5,9 @@ uniform float sampleDistance;
 uniform float sampleSpread;
 uniform float speed;
 uniform float randomness;
+uniform vec3 redColor;
+uniform vec3 greenColor;
+uniform vec3 blueColor;
 
 // 2D Random
 float random(in vec2 st) {
@@ -73,14 +76,14 @@ vec2 steer(vec4 agent) {
 
   vec3 color = vec3(0.0);
   if(isRedGroup) {
-    color = vec3(1.0, 0.0, 0.0);
+    color =   redColor;
 
 
   } else if(isGreenGroup) {
-    color = vec3(0.0, 1.0, 0.0);
+    color = greenColor;
 
   } else if(isBlueGroup) {
-    color = vec3(0.0, 0.0, 1.0);
+    color = blueColor;
 
   }
 
