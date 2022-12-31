@@ -15,17 +15,15 @@ export default function Experience(props: { enableDebug?: boolean }) {
       <Leva hidden={!props.enableDebug} />
       <Canvas
         flat={false}
-        shadows={true}
         dpr={1}
         camera={{
-          position: [5, 5, 5],
+          position: [0, 0, 10],
         }}
       >
-        <color args={['lightblue']} attach='background' />
+        {/* <color args={['lightblue']} attach='background' /> */}
         {props.enableDebug && (
           <>
-            <axesHelper args={[5]} />
-            <Perf position='top-left' />
+            {/* <Perf position='top-left' /> */}
             <PerformanceMonitor />
           </>
         )}

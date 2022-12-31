@@ -1969,6 +1969,11 @@ glsl-tokenizer@^2.1.5:
   dependencies:
     through2 "^0.6.3"
 
+gpucomputationrender-three@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/gpucomputationrender-three/-/gpucomputationrender-three-2.0.0.tgz#73e4f7b4329def9b74e4703a63a29abc65b197a2"
+  integrity sha512-GK+0QfBl3Qu/7pscQnQugvGprpeZ9n1PsHZBMTcIXKK5graazfHPInKnODiD3dY0+8ahNHV0PksEjbTm+0fHkQ==
+
 grapheme-splitter@^1.0.4:
   version "1.0.4"
   resolved "https://registry.npmjs.org/grapheme-splitter/-/grapheme-splitter-1.0.4.tgz#9cf3a665c6247479896834af35cf1dbb4400767e"
