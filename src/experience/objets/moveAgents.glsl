@@ -67,56 +67,35 @@ vec2 rotate(vec2 v, float a) {
   return m * v;
 }
 
-vec2 steer(vec4 agent) {
+vec2 boundsCheck(vec2 pos) {
+  return (pos.x > 0.0 && pos.x < 1.0 && pos.y > 0.0 && pos.y < 1.0) ? pos : vec2(-1.0);
+}
 
-  vec2 uv = gl_FragCoord.xy / resolution.xy;
-  bool isRedGroup = uv.x  < 1.0 / 3.0;
-  bool isGreenGroup = uv.x  < 2.0 / 3.0;
+vec3 getColor(vec2 uv) {
+  bool isRedGroup = uv.x < 1.0 / 3.0;
+  bool isGreenGroup = uv.x < 2.0 / 3.0;
   bool isBlueGroup = !isRedGroup && !isGreenGroup;
+  return (isRedGroup) ? redColor : (isGreenGroup) ? greenColor : blueColor;
+}
 
-  vec3 color = vec3(0.0);
-  if(isRedGroup) {
-    color =   redColor;
-
-
-  } else if(isGreenGroup) {
-    color = greenColor;
-
-  } else if(isBlueGroup) {
-    color = blueColor;
-
-  }
-
+vec2 steer(vec4 agent) {
+  vec2 uv = gl_FragCoord.xy / resolution.xy;
+  vec3 color = getColor(uv);
   vec2 agentPos = agent.xy / resolution.xy;
-  vec2 agentVel = sampleDistance * agent.zw / resolution.xy;
+  vec2 agentVel = (resolution.x * sampleDistance /1024.) * agent.zw / resolution.xy;
 
   float angle = 3.14159 / sampleSpread;
   vec2 left = rotate(agentVel, angle);
   vec2 right = rotate(agentVel, -angle);
   vec2 center = agentVel;
 
-  float leftWeight = 0.;
-  float rightWeight = 0.;
-  float centerWeight = 0.;
+  vec2 leftCheck = boundsCheck(agentPos + left);
+  vec2 rightCheck = boundsCheck(agentPos + right);
+  vec2 centerCheck = boundsCheck(agentPos + center);
 
-  // sample the texture at the left, right and center positions
-
-  bool leftInBounds = agentPos.x + left.x > 0.0 && agentPos.x + left.x < 1.0 && agentPos.y + left.y > 0.0 && agentPos.y + left.y < 1.0;
-  bool rightInBounds = agentPos.x + right.x > 0.0 && agentPos.x + right.x < 1.0 && agentPos.y + right.y > 0.0 && agentPos.y + right.y < 1.0;
-  bool centerInBounds = agentPos.x + center.x > 0.0 && agentPos.x + center.x < 1.0 && agentPos.y + center.y > 0.0 && agentPos.y + center.y < 1.0;
-
-  if(leftInBounds) {
-    vec4 s = texture2D(textureValue, agentPos + left);
-    leftWeight = length(s.xyz * color);
-  }
-  if(rightInBounds) {
-    vec4 s = texture2D(textureValue, agentPos + right);
-    rightWeight = length(s.xyz * color);
-  }
-  if(centerInBounds) {
-    vec4 s = texture2D(textureValue, agentPos + center);
-    centerWeight = length(s.xyz * color);
-  }
+  float leftWeight = (leftCheck.x != -1.0) ? length((texture2D(textureValue, leftCheck).xyz * color)) : 0.0;
+  float rightWeight = (rightCheck.x != -1.0) ? length((texture2D(textureValue, rightCheck).xyz * color)) : 0.0;
+  float centerWeight = (centerCheck.x != -1.0) ? length((texture2D(textureValue, centerCheck).xyz * color)) : 0.0;
 
   // update the velocity based on the weights
   if(leftWeight > centerWeight && leftWeight > rightWeight) {
@@ -127,18 +106,9 @@ vec2 steer(vec4 agent) {
     agentVel = center;
   }
 
-  if(!leftInBounds && !rightInBounds && !centerInBounds) {
-    agentVel = -agentVel;
-  } 
-  // normalize the velocity
-  agentVel = normalize(agentVel);
-  vec2 current = agent.zw / resolution.xy;
-  // if new velocity is almost zero, keep the old one
+  agentVel = (leftWeight > centerWeight && leftWeight > rightWeight) ? left : (rightWeight > centerWeight && rightWeight > leftWeight) ? right : center;
 
-  if(length(agentVel) < 0.01) {
-    agentVel = current;
-  }
-
+  agentVel = (length(agentVel) < 0.01) ? agent.zw / resolution.xy : normalize(agentVel);
   agent.zw = agentVel * resolution.xy;
 
   return agentVel;
@@ -148,32 +118,18 @@ vec4 updateAgent(vec4 agent) {
   vec2 agentPos = agent.xy;
   vec2 agentVel = agent.zw;
 
-  // steer the agent
   agentVel = steer(agent);
-
-  // rotate velocity by a random amount
-  float angle = noise3(vec3(agentPos + vec2(delta, 1.), time)) * 2.0 - 1.0;
-  agentVel = rotate(agentVel, angle * randomness);
-
-  agentPos += agentVel * delta * 0.1 * speed;
-
+  agentVel = rotate(agentVel, (noise3(vec3(agentPos + vec2(delta, 1.), time)) * 2.0 - 1.0) * randomness);
+  agentPos += agentVel * delta * 0.1 * (resolution.x*speed/1024.);
   agentPos = mod(agentPos + resolution.xy, resolution.xy);
 
-  agent.xy = agentPos;
-  agent.zw = agentVel;
-
-  return agent;
+  return vec4(agentPos, agentVel);
 }
+
 
 void main() {
-
   vec2 uv = gl_FragCoord.xy / resolution.xy;
   vec4 agent = texture2D(textureAgents, uv);
-
   agent = updateAgent(agent);
-
   gl_FragColor = agent;
-  // gl_FragColor = texture2D( textureAgents, uv );
-
 }
-

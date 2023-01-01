@@ -18,6 +18,22 @@ vec4 blur(vec2 uv, vec4 color) {
   return sum / float(NUM_DIRECTIONS + 0);
 }
 
+float shape(float a) {
+  // y = 1 - x^a
+  return 1.0 - pow(a, 2.0);
+}
+
+
+vec3 fadeFn(vec3 color) {
+  float magic = 99.1;
+  vec3 c = color * shape(magic);
+  c = mix(c, vec3(0.0), fade);
+  c = c / shape(magic);
+  return c;
+
+  return mix(color, vec3(0.0), fade);
+}
+
 void main() {
 
   vec2 uv = gl_FragCoord.xy / resolution.xy;
@@ -54,8 +70,10 @@ void main() {
     }
 
   }
-  current = blur(uv, current);
-  current.xyz = mix(current.xyz, vec3(0.0), fade);
+  vec4 b = blur(uv, current);
+  current = mix(current, b, 0.1);
+
+  current.xyz = fadeFn(current.xyz);
 
   gl_FragColor = current;
 

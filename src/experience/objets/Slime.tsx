@@ -37,7 +37,7 @@ export default function Slime() {
       label: 'Distance',
     },
     agentSampleSpread: {
-      value: 0.51,
+      value: 0.6,
       min: 0.00001,
       max: Math.PI / 2,
       step: 0.01,
@@ -51,14 +51,15 @@ export default function Slime() {
       label: 'Speed',
     },
     agentRandomness: {
-      value: 0.5,
+      value: 0.2,
       min: 0,
       max: 1,
       step: 0.01,
       label: 'Randomness',
+      hint: 'Factor of random agent movement',
     },
     fade: {
-      value: 0.05,
+      value: 0.02,
       min: 0,
       max: 1,
       step: 0.01,
