@@ -15,8 +15,8 @@ import Sphere from '../Sphere'
 import fragmentShaderValue from './drawAgents.glsl'
 import fragmentShaderAgents from './moveAgents.glsl'
 
-const WIDTH = 256
-const AGENT_COUNT = 256
+const WIDTH = 1024
+const AGENT_COUNT = 1024
 
 export default function Slime() {
   const {

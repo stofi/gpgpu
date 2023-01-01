@@ -15,7 +15,20 @@ vec2 checkBounds(vec2 agentPos, vec2 agentVel) {
 
 float calcWeight(vec2 uv, vec3 color, vec2 pos) {
   vec2 check = boundsCheck(pos);
-  return (check.x != -1.0) ? length((texture2D(textureValue, check).xyz * color)) : 0.0;
+  vec3 s = texture2D(textureValue, check).xyz;
+
+  if(check.x == -1.0)
+    return 0.0;
+
+  if(color.r > color.g && color.r > color.b) {
+    return s.r - (s.g + s.b) / 2.0;
+  } else if(color.g > color.r && color.g > color.b) {
+    return s.g - (s.r + s.b) / 2.0;
+  } else if(color.b > color.r && color.b > color.g) {
+    return s.b - (s.r + s.g) / 2.0;
+  } else {
+    return length(s);
+  }
 }
 
 vec2 getVelocity(vec2 uv, vec3 color, vec2 agentPos, vec2 agentVel) {

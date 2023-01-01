@@ -3,13 +3,22 @@
 const int NUM_DIRECTIONS = 8;
 vec2 directions[NUM_DIRECTIONS] = vec2[](vec2(0.0, 1.0 / resolution.y), vec2(0.0, -1.0 / resolution.y), vec2(1.0 / resolution.x, 0.0), vec2(-1.0 / resolution.x, 0.0), vec2(1.0 / resolution.x, 1.0 / resolution.y), vec2(-1.0 / resolution.x, 1.0 / resolution.y), vec2(1.0 / resolution.x, -1.0 / resolution.y), vec2(-1.0 / resolution.x, -1.0 / resolution.y));
 
+vec4 blurChannel(vec2 uv, vec4 color, vec4 mask) {
+  vec4 sum = color * mask;
+  // vec4 sum = vec4(0.0);
+  for(int i = 0; i < NUM_DIRECTIONS; i++) {
+    sum += texture2D(textureValue, uv + directions[i]) * mask;
+  }
+  return sum / float(NUM_DIRECTIONS + 1);
+}
+
 vec4 blur(vec2 uv, vec4 color) {
-  // vec4 sum = color;
-  vec4 sum = vec4(0.0);
+  vec4 sum = color;
+  // vec4 sum = vec4(0.0);
   for(int i = 0; i < NUM_DIRECTIONS; i++) {
     sum += texture2D(textureValue, uv + directions[i]);
   }
-  return sum / float(NUM_DIRECTIONS + 0);
+  return sum / float(NUM_DIRECTIONS + 1);
 }
 
 float shape(float a) {

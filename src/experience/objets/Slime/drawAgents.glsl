@@ -18,7 +18,12 @@ void main() {
     }
   }
 
-  vec4 b = blur(uv, current);
+  vec4 b = vec4(0.0);
+  // blur(uv, current);
+  b.r = blurChannel(uv, current, vec4(1.0, 0.0, 0.0, 0.0)).r;
+  b.g = blurChannel(uv, current, vec4(0.0, 1.0, 0.0, 0.0)).g;
+  b.b = blurChannel(uv, current, vec4(0.0, 0.0, 1.0, 0.0)).b;
+
   current = mix(current, b, 0.1);
   current.xyz = fadeFn(current.xyz);
   gl_FragColor = current;
