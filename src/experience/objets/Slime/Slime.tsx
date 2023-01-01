@@ -15,8 +15,8 @@ import Sphere from '../Sphere'
 import fragmentShaderValue from './drawAgents.glsl'
 import fragmentShaderAgents from './moveAgents.glsl'
 
-const WIDTH = 1024
-const AGENT_COUNT = 1024
+const WIDTH = 256
+const AGENT_COUNT = 256
 
 type TUniform = {
   [uniform: string]: THREE.IUniform<any>
@@ -33,9 +33,9 @@ const defaultUniforms: TUniform = {
   fade: { value: 0.0 },
   fadePower: { value: 0.0 },
   radius: { value: 1.0 },
-  redColor: { value: new THREE.Color('#ff0000') },
-  greenColor: { value: new THREE.Color('#00ff00') },
-  blueColor: { value: new THREE.Color('#0000ff') },
+  redColor: { value: new THREE.Color('#ff92b0') },
+  greenColor: { value: new THREE.Color('#61ffb0') },
+  blueColor: { value: new THREE.Color('#6192ff') },
   stepInterpolation: { value: 0.0 },
 }
 
@@ -145,15 +145,15 @@ export default function Slime() {
       label: 'Fade',
     },
     redColor: {
-      value: '#ff0000',
+      value: '#ff92b0',
       label: 'Red',
     },
     greenColor: {
-      value: '#00ff00',
+      value: '#61ffb0',
       label: 'Green',
     },
     blueColor: {
-      value: '#0000ff',
+      value: '#6192ff',
       label: 'Blue',
     },
 
