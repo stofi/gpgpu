@@ -2,5 +2,8 @@
   "nuxt.isNuxtApp": false,
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true,
+  },
+  "[glsl]": {
+    "editor.formatOnSave": true,
   }
 }

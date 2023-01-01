@@ -10,10 +10,10 @@ import { ThreeEvent, useFrame } from '@react-three/fiber'
 
 import { useControls } from 'leva'
 
-import CustomMaterial from '../materials/CustomMaterial'
+import CustomMaterial from '../../materials/CustomMaterial'
+import Sphere from '../Sphere'
 import fragmentShaderValue from './drawAgents.glsl'
 import fragmentShaderAgents from './moveAgents.glsl'
-import Sphere from './Sphere'
 
 const WIDTH = 1024
 const AGENT_COUNT = 256
@@ -28,6 +28,7 @@ export default function Slime() {
     redColor,
     greenColor,
     blueColor,
+    stepInterpolation,
   } = useControls({
     agentSampleDistance: {
       value: 50,
@@ -76,6 +77,13 @@ export default function Slime() {
     blueColor: {
       value: '#0000ff',
       label: 'Blue',
+    },
+    stepInterpolation: {
+      value: 0.5,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      label: 'Smoothness',
     },
   })
 
@@ -144,6 +152,7 @@ export default function Slime() {
     redColor: { value: new THREE.Color('#ff0000') },
     greenColor: { value: new THREE.Color('#00ff00') },
     blueColor: { value: new THREE.Color('#00ff00') },
+    stepInterpolation: { value: 0.0 },
   })
 
   const [agentUniforms, setAgentUniforms] = useState<{
@@ -159,6 +168,7 @@ export default function Slime() {
     redColor: { value: new THREE.Color('#ff0000') },
     greenColor: { value: new THREE.Color('#00ff00') },
     blueColor: { value: new THREE.Color('#00ff00') },
+    stepInterpolation: { value: 0.0 },
   })
 
   const initGpuCompute = (gl: THREE.WebGLRenderer) => {
@@ -206,6 +216,10 @@ export default function Slime() {
     valueVariable.material.uniforms.count = { value: AGENT_COUNT }
     valueVariable.material.uniforms.fade = { value: 0.0 }
 
+    valueVariable.material.uniforms.stepInterpolation = {
+      value: 0.0,
+    }
+
     valueVariable.material.uniforms.redColor = {
       value: new THREE.Color('#ff0000'),
     }
@@ -225,7 +239,6 @@ export default function Slime() {
     agentsVariable.material.uniforms.sampleSpread = { value: 1 / 6 }
     agentsVariable.material.uniforms.randomness = { value: 0.1 }
     agentsVariable.material.uniforms.speed = { value: 1.0 }
-
     agentsVariable.material.uniforms.fade = { value: 0.0 }
 
     agentsVariable.material.uniforms.redColor = {
@@ -238,6 +251,10 @@ export default function Slime() {
 
     agentsVariable.material.uniforms.blueColor = {
       value: new THREE.Color('#0000ff'),
+    }
+
+    agentsVariable.material.uniforms.stepInterpolation = {
+      value: 0.0,
     }
 
     setComputeUniforms(valueVariable.material.uniforms)
@@ -290,6 +307,7 @@ export default function Slime() {
       agentUniforms.randomness.value = agentRandomness
       agentUniforms.speed.value = agentSpeed
       agentUniforms.fade.value = fade
+      agentUniforms.stepInterpolation.value = stepInterpolation
 
       setTime(now)
 

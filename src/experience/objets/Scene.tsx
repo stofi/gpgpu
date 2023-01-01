@@ -1,7 +1,7 @@
 import { Environment, OrbitControls } from '@react-three/drei'
 
 import GameOfLife from './GameOfLife'
-import Slime from './Slime'
+import Slime from './Slime/Slime'
 
 export default function Scene() {
   return (
