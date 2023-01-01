@@ -6,10 +6,13 @@ void main() {
   float px = 1.0 / resolution.x;
 
   for(int i = 0; i < count; i++) {
-    vec2 agentPos = texture2D(textureAgents, vec2(float(i) / float(count), 0.0)).xy /
+  // calculate the x and y indices for the agent position
+    int xIndex = i % int(resolution.x);
+    int yIndex = i / int(resolution.x);
+    vec2 agentPos = texture2D(textureAgents, vec2(float(xIndex) / resolution.x, float(yIndex) / resolution.y)).xy /
       resolution.xy;
     vec3 color = getColor(i);
-    if(distance(uv, agentPos) < px * radius) {
+    if(distance(uv, agentPos) < px * (resolution.x * radius / 1024.)) {
       gl_FragColor = vec4(color, 1.0);
       return;
     }

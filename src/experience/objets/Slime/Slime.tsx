@@ -40,7 +40,7 @@ export default function Slime() {
       label: 'Radius',
     },
     agentSpeed: {
-      value: 1,
+      value: 2,
       min: 0,
       max: 10,
       step: 0.01,
