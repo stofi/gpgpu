@@ -9,7 +9,7 @@ void main() {
     vec2 agentPos = texture2D(textureAgents, vec2(float(i) / float(count), 0.0)).xy /
       resolution.xy;
     vec3 color = getColor(i);
-    if(distance(uv, agentPos) < px * 2.0) {
+    if(distance(uv, agentPos) < px * radius) {
       gl_FragColor = vec4(color, 1.0);
       return;
     }

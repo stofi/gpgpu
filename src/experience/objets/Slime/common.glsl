@@ -18,10 +18,9 @@ float shape(float a) {
 }
 
 vec3 fadeFn(vec3 color) {
-  float magic = 99.1;
-  vec3 c = color * shape(magic);
+  vec3 c = color * shape(fadePower);
   c = mix(c, vec3(0.0), fade);
-  c = c / shape(magic);
+  c = c / shape(fadePower);
   return c;
 
   return mix(color, vec3(0.0), fade);

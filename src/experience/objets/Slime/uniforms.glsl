@@ -11,3 +11,6 @@ uniform vec3 blueColor;
 
 uniform float stepInterpolation;
 uniform float fade;
+uniform float fadePower;
+
+uniform float radius;
