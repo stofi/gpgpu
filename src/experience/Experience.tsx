@@ -20,7 +20,6 @@ export default function Experience(props: { enableDebug?: boolean }) {
           position: [0, 0, 10],
         }}
       >
-        <color args={['#101010']} attach='background' />
         {props.enableDebug && (
           <>
             {/* <Perf position='top-left' /> */}
