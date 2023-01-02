@@ -17,25 +17,27 @@ void main() {
     bool center = distance(uv, agentPos) < px * (2. * resolution.x * radius / 1024.);
     bool edge = distance(uv, offset) < px * (1. * resolution.x * radius / 1024.);
 
-    if(center && !edge) {
+    if(center) {
       gl_FragColor = vec4(color, 1.0);
       return;
     }
-    if(edge) {
-      gl_FragColor = vec4(1.);
-      return;
-    }
+    // if(center && !edge) {
+    //   gl_FragColor = vec4(color, 1.0);
+    //   return;
+    // }
+    // if(edge) {
+    //   gl_FragColor = vec4(1.);
+    //   return;
+    // }
 
   }
 
   vec4 b = vec4(0.0);
-  // blur(uv, current);
-  b.r = blurChannel(uv, current, vec4(1.0, 0.0, 0.0, 0.0)).r;
-  b.g = blurChannel(uv, current, vec4(0.0, 1.0, 0.0, 0.0)).g;
-  b.b = blurChannel(uv, current, vec4(0.0, 0.0, 1.0, 0.0)).b;
+
+  b = blur(uv, current);
 
   current = mix(current, b, 0.1);
   current.xyz = fadeFn(current.xyz);
-  current.w = (current.x + current.y + current.z) / 3.;
+  // current.w = (current.x + current.y + current.z) / 3.;
   gl_FragColor = current;
 }
