@@ -9,13 +9,23 @@ void main() {
   // calculate the x and y indices for the agent position
     int xIndex = i % int(resolution.x);
     int yIndex = i / int(resolution.x);
-    vec2 agentPos = texture2D(textureAgents, vec2(float(xIndex) / resolution.x, float(yIndex) / resolution.y)).xy /
-      resolution.xy;
+    vec4 agent = texture2D(textureAgents, vec2(float(xIndex) / resolution.x, float(yIndex) / resolution.y));
+    vec2 agentPos = agent.xy / resolution.xy;
+    vec2 agentVel = agent.zw / resolution.xy;
+    vec2 offset = agentPos - agentVel;
     vec3 color = getColor(i);
-    if(distance(uv, agentPos) < px * (resolution.x * radius / 1024.)) {
+    bool center = distance(uv, agentPos) < px * (2. * resolution.x * radius / 1024.);
+    bool edge = distance(uv, offset) < px * (1. * resolution.x * radius / 1024.);
+
+    if(center && !edge) {
       gl_FragColor = vec4(color, 1.0);
       return;
     }
+    if(edge) {
+      gl_FragColor = vec4(0., 0., 0., 1);
+      return;
+    }
+
   }
 
   vec4 b = vec4(0.0);
@@ -26,5 +36,6 @@ void main() {
 
   current = mix(current, b, 0.1);
   current.xyz = fadeFn(current.xyz);
+  current.w = (current.x + current.y + current.z) / 3.;
   gl_FragColor = current;
 }

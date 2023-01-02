@@ -5,11 +5,11 @@ vec2 directions[NUM_DIRECTIONS] = vec2[](vec2(0.0, 1.0 / resolution.y), vec2(0.0
 
 vec4 blurChannel(vec2 uv, vec4 color, vec4 mask) {
   vec4 sum = color * mask;
-  // vec4 sum = vec4(0.0);
+  bool includeSelf = true;
   for(int i = 0; i < NUM_DIRECTIONS; i++) {
     sum += texture2D(textureValue, uv + directions[i]) * mask;
   }
-  return sum / float(NUM_DIRECTIONS + 1);
+  return sum / float(NUM_DIRECTIONS + (includeSelf ? 1 : 0));
 }
 
 vec4 blur(vec2 uv, vec4 color) {

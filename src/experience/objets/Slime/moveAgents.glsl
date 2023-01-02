@@ -5,9 +5,8 @@ vec2 checkBounds(vec2 agentPos, vec2 agentVel) {
   vec2 newPos = agentPos + agentVel;
 
   if(newPos.x < 0.0 || newPos.x > 1.0 || newPos.y < 0.0 || newPos.y > 1.0) {
-    float angle = (noise(vec2(time)) > 0.5) ? 3.14159 / 2.0 : -3.14159 / 2.0;
-    agentVel = rotate(agentVel, angle);
-    agentVel = normalize(agentVel);
+    agentVel = rotate(agentVel, 3.14159 / 2.0);
+    agentVel = normalize(agentVel) * 2.0;
   }
 
   return agentVel;
@@ -60,17 +59,14 @@ vec2 steer(vec4 agent) {
 }
 
 vec4 updateAgent(vec4 agent) {
-  vec2 agentPos = agent.xy;
-  vec2 agentVel = agent.zw;
 
-  agentVel = steer(agent);
-  agentVel = rotate(agentVel, (noise3(vec3(agentPos + vec2(delta, 1.), time)) * 2.0 - 1.0) *
+  agent.zw = rotate(agent.zw, (noise3(vec3(420. * gl_FragCoord.xy, time)) * 2.0 - 1.0) *
     randomness);
-  agentPos += agentVel * delta * 0.1 * (resolution.x * speed / 1024.);
 
-  agentPos = mod(agentPos + resolution.xy, resolution.xy);
+  agent.zw = steer(agent);
+  agent.xy += agent.zw * delta * 0.1 * (resolution.x * speed / 1024.);
 
-  return vec4(agentPos, agentVel);
+  return vec4(agent.xy, agent.zw);
 }
 
 void main() {
@@ -79,5 +75,8 @@ void main() {
   // agent = updateAgent(agent);
   // interpolate between the current agent and the new agent
   agent = mix(agent, updateAgent(agent), stepInterpolation);
+
+  agent.xy = mod(agent.xy + resolution.xy, resolution.xy);
+
   gl_FragColor = agent;
 }

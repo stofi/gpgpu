@@ -15,8 +15,8 @@ import Sphere from '../Sphere'
 import fragmentShaderValue from './drawAgents.glsl'
 import fragmentShaderAgents from './moveAgents.glsl'
 
-const WIDTH = 256
-const AGENT_COUNT = 256
+const WIDTH = 1024
+const AGENT_COUNT = 1024
 
 type TUniform = {
   [uniform: string]: THREE.IUniform<any>
@@ -145,15 +145,15 @@ export default function Slime() {
       label: 'Fade',
     },
     redColor: {
-      value: '#ff92b0',
+      value: '#ff0048',
       label: 'Red',
     },
     greenColor: {
-      value: '#61ffb0',
+      value: '#00ff80',
       label: 'Green',
     },
     blueColor: {
-      value: '#6192ff',
+      value: '#0051ff',
       label: 'Blue',
     },
 
@@ -280,7 +280,7 @@ export default function Slime() {
       {computeRenderer && planeTexture && (
         <mesh onClick={handleClick}>
           <planeGeometry args={[10, 10]} />
-          <meshBasicMaterial map={planeTexture} />
+          <meshBasicMaterial map={planeTexture} transparent />
         </mesh>
       )}
     </>
