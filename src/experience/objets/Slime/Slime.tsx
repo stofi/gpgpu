@@ -16,7 +16,7 @@ import fragmentShaderValue from './drawAgents.glsl'
 import fragmentShaderAgents from './moveAgents.glsl'
 
 const WIDTH = 1024
-const AGENT_COUNT = 1024
+const AGENT_COUNT = 128
 
 type TUniform = {
   [uniform: string]: THREE.IUniform<any>
@@ -32,11 +32,12 @@ const defaultUniforms: TUniform = {
   speed: { value: 1.0 },
   fade: { value: 0.0 },
   fadePower: { value: 0.0 },
-  radius: { value: 1.0 },
+  radius: { value: 0.5 },
   redColor: { value: new THREE.Color('#ff92b0') },
   greenColor: { value: new THREE.Color('#61ffb0') },
   blueColor: { value: new THREE.Color('#6192ff') },
   stepInterpolation: { value: 0.0 },
+  groupCount: { value: 1.0 },
 }
 
 const fillValueTexture = (texture: THREE.DataTexture) => {
@@ -58,11 +59,7 @@ const fillAgentTexture = (texture: THREE.DataTexture) => {
   const theArray = texture.image.data
   let counter = 0
 
-  for (
-    let k = 0, kl = theArray.length;
-    k < kl || counter == AGENT_COUNT;
-    k += 4
-  ) {
+  for (let k = 0, kl = theArray.length; k < kl; k += 4) {
     // random position in the plane
     theArray[k + 0] = Math.random() * WIDTH
     theArray[k + 1] = Math.random() * WIDTH
@@ -92,6 +89,8 @@ export default function Slime() {
     stepInterpolation,
     fadePower,
     radius,
+    groupCount,
+    agentCount,
   } = useControls({
     radius: {
       value: 2,
@@ -138,12 +137,20 @@ export default function Slime() {
       label: 'Spread',
     },
     fade: {
-      value: 0.02,
+      value: 0.08,
       min: 0,
       max: 0.1,
       step: 0.01,
       label: 'Fade',
     },
+    groupCount: {
+      value: 1,
+      min: 1,
+      max: 3,
+      step: 1,
+      label: 'Group Count',
+    },
+
     redColor: {
       value: '#ff0048',
       label: 'Red',
@@ -163,6 +170,13 @@ export default function Slime() {
       max: 10,
       step: 0.01,
       label: 'Fade Power',
+    },
+    agentCount: {
+      value: 128,
+      min: 1,
+      max: 1024,
+      step: 1,
+      label: 'Agent Count',
     },
   })
 
@@ -196,6 +210,7 @@ export default function Slime() {
       fragmentShaderValue,
       valueTexture,
     )
+
     setValueVariable(valueVariable)
 
     const positionTexture = gpuCompute.createTexture()
@@ -246,6 +261,8 @@ export default function Slime() {
       stateUniforms.randomness.value = agentRandomness
       stateUniforms.speed.value = agentSpeed
       stateUniforms.stepInterpolation.value = stepInterpolation
+      stateUniforms.groupCount.value = groupCount
+      stateUniforms.count.value = agentCount
 
       if (redColor && stateUniforms.redColor) {
         stateUniforms.redColor.value = new THREE.Color(redColor)
@@ -262,10 +279,10 @@ export default function Slime() {
       setDelay(delay - 1)
       computeRenderer.compute()
 
-      if (valueVariable) {
-        setPlaneTexture(
-          computeRenderer.getCurrentRenderTarget(valueVariable).texture,
-        )
+      if (valueVariable && !planeTexture) {
+        const t = computeRenderer.getCurrentRenderTarget(valueVariable).texture
+
+        setPlaneTexture(t)
       }
     }
   })
@@ -280,7 +297,12 @@ export default function Slime() {
       {computeRenderer && planeTexture && (
         <mesh onClick={handleClick}>
           <planeGeometry args={[10, 10]} />
-          <meshBasicMaterial map={planeTexture} transparent />
+          <meshStandardMaterial
+            side={2}
+            map={planeTexture}
+            transparent
+            emissiveIntensity={10}
+          />
         </mesh>
       )}
     </>

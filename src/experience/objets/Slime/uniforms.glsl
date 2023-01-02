@@ -14,3 +14,5 @@ uniform float fade;
 uniform float fadePower;
 
 uniform float radius;
+
+uniform int groupCount;

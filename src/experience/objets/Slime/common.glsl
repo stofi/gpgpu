@@ -27,12 +27,9 @@ float shape(float a) {
 }
 
 vec3 fadeFn(vec3 color) {
-  vec3 c = color * shape(fadePower);
-  c = mix(c, vec3(0.0), fade);
-  c = c / shape(fadePower);
-  return c;
+  // use 'fade' uniform to fade out the color
 
-  return mix(color, vec3(0.0), fade);
+  return color - color * fade;
 }
 
 vec2 rotate(vec2 v, float a) {
@@ -71,17 +68,18 @@ vec3 rotateHue(vec3 color, float hueShift) {
 }
 
 vec3 getColor(vec2 uv) {
-  bool isRedGroup = uv.x < 1.0 / 3.0;
-  bool isGreenGroup = uv.x < 2.0 / 3.0;
-  bool isBlueGroup = !isRedGroup && !isGreenGroup;
+  float fr = 1.0 / float(groupCount);
+
+  bool isRedGroup = uv.x < fr;
+  bool isGreenGroup = uv.x < fr * 2.0;
   vec3 c = (isRedGroup) ? redColor : (isGreenGroup) ? greenColor : blueColor;
   c = rotateHue(c, 1.);
   return c;
 }
 vec3 getColor(int i) {
-  bool isRedGroup = i - 1 < count / 3;
-  bool isGreenGroup = i - 1 < count * 2 / 3;
-  bool isBlueGroup = !isRedGroup && !isGreenGroup;
+  float fr = float(count) / float(groupCount);
+  bool isRedGroup = float(i) < fr;
+  bool isGreenGroup = float(i) <= fr * 2.0;
   vec3 c = (isRedGroup) ? redColor : (isGreenGroup) ? greenColor : blueColor;
   c = rotateHue(c, 1.);
   return c;

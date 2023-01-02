@@ -19,15 +19,7 @@ float calcWeight(vec2 uv, vec3 color, vec2 pos) {
   if(check.x == -1.0)
     return 0.0;
 
-  if(color.r > color.g && color.r > color.b) {
-    return s.r - (s.g + s.b) / 2.0;
-  } else if(color.g > color.r && color.g > color.b) {
-    return s.g - (s.r + s.b) / 2.0;
-  } else if(color.b > color.r && color.b > color.g) {
-    return s.b - (s.r + s.g) / 2.0;
-  } else {
-    return length(s);
-  }
+  return (color.r > color.g && color.r > color.b) ? s.r - (s.g + s.b) / 2.0 : (color.g > color.r && color.g > color.b) ? s.g - (s.r + s.b) / 2.0 : (color.b > color.r && color.b > color.g) ? s.b - (s.r + s.g) / 2.0 : length(s);
 }
 
 vec2 getVelocity(vec2 uv, vec3 color, vec2 agentPos, vec2 agentVel) {
@@ -40,7 +32,23 @@ vec2 getVelocity(vec2 uv, vec3 color, vec2 agentPos, vec2 agentVel) {
   float rightWeight = calcWeight(uv, color, agentPos + right);
   float centerWeight = calcWeight(uv, color, agentPos + center);
 
-  return (leftWeight > centerWeight && leftWeight > rightWeight) ? left : (rightWeight > centerWeight && rightWeight > leftWeight) ? right : center;
+  float maxWeight = max(leftWeight, max(rightWeight, centerWeight));
+  float minWeight = min(leftWeight, min(rightWeight, centerWeight));
+  float range = maxWeight - minWeight;
+
+  if(range == 0.0) {
+    // If all weights are equal, return any of the directions
+    return center;
+  }
+
+  float t = (maxWeight - centerWeight) / range;
+  return mix(center, (leftWeight > rightWeight) ? left : right, t);
+}
+
+vec2 randomVec2() {
+  float x = noise3(vec3(gl_FragCoord.xy, time));
+  float y = noise3(vec3(gl_FragCoord.xy, time + 1.0));
+  return normalize(vec2(x, y));
 }
 
 vec2 steer(vec4 agent) {
@@ -52,7 +60,7 @@ vec2 steer(vec4 agent) {
   agentVel = checkBounds(agentPos, agentVel);
   agentVel = getVelocity(uv, color, agentPos, agentVel);
 
-  agentVel = (length(agentVel) < 0.01) ? agent.zw / resolution.xy : normalize(agentVel);
+  agentVel = (length(agentVel) < 2.2 / resolution.x) ? randomVec2() : normalize(agentVel);
   agent.zw = agentVel * resolution.xy;
 
   return agentVel;
