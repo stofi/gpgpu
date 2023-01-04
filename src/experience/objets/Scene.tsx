@@ -14,7 +14,7 @@ type TResolutions = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096
 export default function Scene() {
   const { experiment, resolution } = useControls({
     experiment: {
-      value: 'fluid',
+      value: 'slime',
       options: ['fluid', 'slime', 'gameOfLife'],
     },
     resolution: {
