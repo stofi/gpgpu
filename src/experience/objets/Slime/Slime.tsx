@@ -3,7 +3,7 @@ import {
   GPUComputationRenderer,
   Variable,
 } from 'three/examples/jsm/misc/GPUComputationRenderer'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Environment, OrbitControls } from '@react-three/drei'
 import { ThreeEvent, useFrame } from '@react-three/fiber'
@@ -15,7 +15,6 @@ import Sphere from '../Sphere'
 import fragmentShaderValue from './drawAgents.glsl'
 import fragmentShaderAgents from './moveAgents.glsl'
 
-const WIDTH = 1024
 const AGENT_COUNT = 128
 
 type TUniform = {
@@ -40,43 +39,11 @@ const defaultUniforms: TUniform = {
   groupCount: { value: 1.0 },
 }
 
-const fillValueTexture = (texture: THREE.DataTexture) => {
-  const theArray = texture.image.data
-
-  for (let k = 0, kl = theArray.length; k < kl; k += 4) {
-    const x = Math.random() > 0.5 ? 1 : 0
-    const y = Math.random() > 0.5 ? 1 : 0
-    const z = Math.random() > 0.5 ? 1 : 0
-
-    theArray[k + 0] = 0
-    theArray[k + 1] = 0
-    theArray[k + 2] = 0
-    theArray[k + 3] = 1
-  }
+interface SlimeProps {
+  width?: 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096
 }
 
-const fillAgentTexture = (texture: THREE.DataTexture) => {
-  const theArray = texture.image.data
-  let counter = 0
-
-  for (let k = 0, kl = theArray.length; k < kl; k += 4) {
-    // random position in the plane
-    theArray[k + 0] = Math.random() * WIDTH
-    theArray[k + 1] = Math.random() * WIDTH
-
-    // random velocity
-    const vel = new THREE.Vector2(
-      Math.random() * 2 - 1,
-      Math.random() * 2 - 1,
-    ).normalize()
-
-    theArray[k + 2] = vel.x
-    theArray[k + 3] = vel.y
-    counter++
-  }
-}
-
-export default function Slime() {
+export default function Slime({ width = 1024 }: SlimeProps) {
   const {
     agentSampleDistance,
     agentSampleSpread,
@@ -91,7 +58,7 @@ export default function Slime() {
     radius,
     groupCount,
     agentCount,
-  } = useControls({
+  } = useControls('Slime', {
     radius: {
       value: 2,
       min: 0,
@@ -180,6 +147,42 @@ export default function Slime() {
     },
   })
 
+  const fillValueTexture = (texture: THREE.DataTexture) => {
+    const theArray = texture.image.data
+
+    for (let k = 0, kl = theArray.length; k < kl; k += 4) {
+      const x = Math.random() > 0.5 ? 1 : 0
+      const y = Math.random() > 0.5 ? 1 : 0
+      const z = Math.random() > 0.5 ? 1 : 0
+
+      theArray[k + 0] = 0
+      theArray[k + 1] = 0
+      theArray[k + 2] = 0
+      theArray[k + 3] = 1
+    }
+  }
+
+  const fillAgentTexture = (texture: THREE.DataTexture) => {
+    const theArray = texture.image.data
+    let counter = 0
+
+    for (let k = 0, kl = theArray.length; k < kl; k += 4) {
+      // random position in the plane
+      theArray[k + 0] = Math.random() * width
+      theArray[k + 1] = Math.random() * width
+
+      // random velocity
+      const vel = new THREE.Vector2(
+        Math.random() * 2 - 1,
+        Math.random() * 2 - 1,
+      ).normalize()
+
+      theArray[k + 2] = vel.x
+      theArray[k + 3] = vel.y
+      counter++
+    }
+  }
+
   const [computeRenderer, setComputeRenderer] =
     useState<GPUComputationRenderer | null>(null)
 
@@ -199,7 +202,7 @@ export default function Slime() {
   }>(defaultUniforms)
 
   const initGpuCompute = (gl: THREE.WebGLRenderer) => {
-    const gpuCompute = new GPUComputationRenderer(WIDTH, WIDTH, gl)
+    const gpuCompute = new GPUComputationRenderer(width, width, gl)
     const dataType = gl.capabilities.isWebGL2 ? undefined : THREE.HalfFloatType
 
     const valueTexture = gpuCompute.createTexture()
@@ -288,9 +291,17 @@ export default function Slime() {
   })
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
-    const x = Math.floor((e.point.x + 5) * (WIDTH / 10))
-    const y = Math.floor((e.point.y + 5) * (WIDTH / 10))
+    const x = Math.floor((e.point.x + 5) * (width / 10))
+    const y = Math.floor((e.point.y + 5) * (width / 10))
   }
+
+  useEffect(() => {
+    return () => {
+      if (computeRenderer) {
+        computeRenderer.dispose()
+      }
+    }
+  }, [])
 
   return (
     <>

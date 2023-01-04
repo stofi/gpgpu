@@ -7,8 +7,8 @@ import { useFrame } from '@react-three/fiber'
 
 import { useControls } from 'leva'
 
-import fragmentShader from '../shaders/example/fragment.glsl'
-import vertexShader from '../shaders/example/vertex.glsl'
+import fragmentShader from '../shaders/fluid/fragment.glsl'
+import vertexShader from '../shaders/fluid/vertex.glsl'
 
 const textures = [
   './textures/snow/albedo.jpg',
@@ -30,7 +30,7 @@ const textureHandler = (texture: THREE.Texture | THREE.Texture[]) => {
   texture.needsUpdate = true
 }
 
-export default function CustomMaterial(props: {
+export default function FluidMaterial(props: {
   map?: THREE.Texture
   color?: string
 }) {

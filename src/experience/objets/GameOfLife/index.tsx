@@ -3,101 +3,34 @@ import {
   GPUComputationRenderer,
   Variable,
 } from 'three/examples/jsm/misc/GPUComputationRenderer'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Environment, OrbitControls } from '@react-three/drei'
-import { ThreeEvent, useFrame } from '@react-three/fiber'
+import { RootState, ThreeEvent, useFrame } from '@react-three/fiber'
 
-import { useControls } from 'leva'
+import { button, useControls } from 'leva'
 
-import Sphere from './Sphere'
+import Sphere from '../Sphere'
+import fragmentShaderValue from './value.glsl'
 
-const WIDTH = 1024 * 4
-
-const fragmentShaderValue = /* glsl */ `
-uniform float time;
-uniform float delta;
-uniform vec2 click;
-uniform bool isClicked;
-
-const int NUM_DIRECTIONS = 8;
-vec2 directions[NUM_DIRECTIONS] = vec2[](
-  vec2(0.0, 1.0 / resolution.y),
-  vec2(0.0, -1.0 / resolution.y),
-  vec2(1.0 / resolution.x, 0.0),
-  vec2(-1.0 / resolution.x, 0.0),
-  vec2(1.0 / resolution.x, 1.0 / resolution.y),
-  vec2(-1.0 / resolution.x, 1.0 / resolution.y),
-  vec2(1.0 / resolution.x, -1.0 / resolution.y),
-  vec2(-1.0 / resolution.x, -1.0 / resolution.y)
-);
-
-bool customSample(vec2 dUv, vec3 mask) {
-  vec4 _v = texture2D(textureValue, dUv);
-  mask = normalize(mask);
-  float r = _v.x * mask.x;
-  float g = _v.y * mask.y;
-  float b = _v.z * mask.z;
-  return r + g + b > 0.5;
+interface GameOfLifeProps {
+  width?: 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096
+  onRestart?: () => void
 }
 
-bool sampleNeighbour(vec2 dUv, vec2 offset, vec3 mask) {
-  return customSample(dUv + offset, mask);
-}
-
-int countNeighbours(vec2 dUv, vec3 mask) {
-  int count = 0;
-  for (int i = 0; i < NUM_DIRECTIONS; i++) {
-    if (sampleNeighbour(dUv, directions[i], mask)) {
-      count++;
-    }
-  }
-  return count;
-}
-
-bool gameOfLife( vec2 dUv, vec3 mask) {
-  int count = countNeighbours(dUv, mask);
-  bool alive = customSample( dUv, mask);
-  vec2 cUv = click / resolution.xy;
-  float unit = 1.0 / resolution.x;
-
-  float dist = distance(cUv,dUv);
-  if (dist < unit && isClicked) {
-    return true;
-  }
-  
-  if (alive) {
-    if (count < 2) return false;
-    if (count > 3) return false;
-    return true;
-  } else {
-    if (count == 3) return true;
-    return false;
-  }
-}
-
-
-void main()	{
-
-  vec2 uv = gl_FragCoord.xy / resolution.xy;
-  bool r = gameOfLife(uv, vec3(1.,0.,0.));
-  bool g = gameOfLife(uv, vec3(0.,1.,0.));
-  bool b = gameOfLife(uv, vec3(0.,0.,1.));
-
-  gl_FragColor.r = r ? 1.0 : 0.0;
-  gl_FragColor.g = g ? 1.0 : 0.0;
-  gl_FragColor.b = b ? 1.0 : 0.0;
-
-}
-`
-
-export default function GameOfLife() {
-  const { frameDelay } = useControls({
+export default function GameOfLife({
+  width = 1024,
+  onRestart,
+}: GameOfLifeProps) {
+  const { frameDelay, separateRGB } = useControls('Game of Life', {
     frameDelay: {
-      value: 30,
+      value: 1,
       min: 0,
       max: 100,
       step: 1,
+    },
+    separateRGB: {
+      value: true,
     },
   })
 
@@ -112,14 +45,23 @@ export default function GameOfLife() {
     const theArray = texture.image.data
 
     for (let k = 0, kl = theArray.length; k < kl; k += 4) {
-      const x = Math.random() > 0.5 ? 1 : 0
-      const y = Math.random() > 0.5 ? 1 : 0
-      const z = Math.random() > 0.5 ? 1 : 0
+      if (separateRGB) {
+        const x = Math.random() > 0.5 ? 1 : 0
+        const y = Math.random() > 0.5 ? 1 : 0
+        const z = Math.random() > 0.5 ? 1 : 0
 
-      theArray[k + 0] = x
-      theArray[k + 1] = y
-      theArray[k + 2] = z
-      theArray[k + 3] = 1
+        theArray[k + 0] = x
+        theArray[k + 1] = y
+        theArray[k + 2] = z
+        theArray[k + 3] = 1
+      } else {
+        const x = Math.random() > 0.5 ? 1 : 0
+
+        theArray[k + 0] = x
+        theArray[k + 1] = x
+        theArray[k + 2] = x
+        theArray[k + 3] = 1
+      }
     }
   }
 
@@ -130,10 +72,11 @@ export default function GameOfLife() {
     delta: { value: 0.0 },
     click: { value: new THREE.Vector2(0, 0) },
     isClicked: { value: false },
+    separateRGB: { value: true },
   })
 
   const initGpuCompute = (gl: THREE.WebGLRenderer) => {
-    const gpuCompute = new GPUComputationRenderer(WIDTH, WIDTH, gl)
+    const gpuCompute = new GPUComputationRenderer(width, width, gl)
 
     if (gl.capabilities.isWebGL2 === false) {
       gpuCompute.setDataType(THREE.HalfFloatType)
@@ -156,6 +99,7 @@ export default function GameOfLife() {
     valueVariable.material.uniforms.delta = { value: 0.0 }
     valueVariable.material.uniforms.click = { value: new THREE.Vector2(0, 0) }
     valueVariable.material.uniforms.isClicked = { value: false }
+    valueVariable.material.uniforms.separateRGB = { value: true }
 
     setComputeUniforms(valueVariable.material.uniforms)
 
@@ -170,15 +114,18 @@ export default function GameOfLife() {
 
   const [time, setTime] = useState(0)
   const [delay, setDelay] = useState(frameDelay)
+  const [state, setState] = useState<RootState | null>(null)
 
   useFrame((state) => {
     //
     if (!computeRenderer) {
       initGpuCompute(state.gl)
+      setState(state)
     } else {
       const now = performance.now()
       computeUniforms.time.value = now
       computeUniforms.delta.value = now - time
+      computeUniforms.separateRGB.value = separateRGB
 
       setTime(now)
 
@@ -201,12 +148,20 @@ export default function GameOfLife() {
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
     // get position of click in pixels based on WIDTH
-    const x = Math.floor((e.point.x + 5) * (WIDTH / 10))
-    const y = Math.floor((e.point.y + 5) * (WIDTH / 10))
+    const x = Math.floor((e.point.x + 5) * (width / 10))
+    const y = Math.floor((e.point.y + 5) * (width / 10))
 
     computeUniforms.click.value = new THREE.Vector2(x, y)
     computeUniforms.isClicked.value = true
   }
+
+  useEffect(() => {
+    return () => {
+      if (computeRenderer) {
+        computeRenderer.dispose()
+      }
+    }
+  }, [])
 
   return (
     <>
