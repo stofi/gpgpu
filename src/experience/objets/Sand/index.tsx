@@ -50,45 +50,14 @@ interface FluidProps {
 }
 
 export default function Fluid({ width = 1024 }: FluidProps) {
-  const {
-    frameDelay,
-    noiseScale,
-    noiseScale2,
-    reverseVelocityMixFactor,
-    velocityThreshold,
-    smoothFactor,
-  } = useControls('Fluid Glitch', {
+  const { frameDelay, alphaThreshold } = useControls('Fluid Glitch', {
     frameDelay: {
       value: 0,
       min: 0,
       max: 100,
       step: 1,
     },
-    noiseScale: {
-      value: 1,
-      min: 0,
-      max: 100,
-      step: 0.01,
-    },
-    noiseScale2: {
-      value: 0.001,
-      min: 0,
-      max: 1,
-      step: 0.01,
-    },
-    reverseVelocityMixFactor: {
-      value: 0.9,
-      min: 0,
-      max: 1,
-      step: 0.01,
-    },
-    velocityThreshold: {
-      value: 0.001,
-      min: 0,
-      max: 0.1,
-      step: 0.001,
-    },
-    smoothFactor: {
+    alphaThreshold: {
       value: 0.05,
       min: 0,
       max: 1,
@@ -176,7 +145,7 @@ export default function Fluid({ width = 1024 }: FluidProps) {
     for (let k = 0, kl = theArray.length; k < kl; k += 4) {
       let s = skeleton ? skeleton[k] / 255 : 0
       s = sRGBChannelToLinear(s)
-      const th = s > 0.01 ? 1 : 0
+      const th = s > alphaThreshold ? 1 : 0
 
       // const empty = Math.random() > 0.5 ? 0 : 1
       // theArray[k + 0] = empty ? 0 : Math.random()
@@ -190,7 +159,9 @@ export default function Fluid({ width = 1024 }: FluidProps) {
 
       theArray[k + 2] =
         sRGBChannelToLinear(skeleton ? skeleton[k + 2] / 255 : 0) * th
-      theArray[k + 3] = th
+
+      theArray[k + 3] =
+        sRGBChannelToLinear(skeleton ? skeleton[k + 3] / 255 : 0) * th
     }
   }
 
@@ -204,11 +175,6 @@ export default function Fluid({ width = 1024 }: FluidProps) {
       const now = performance.now()
       computeUniforms.time.value = now
       computeUniforms.delta.value = now - time
-      computeUniforms.noiseScale.value = noiseScale
-      computeUniforms.noiseScale2.value = noiseScale2
-      computeUniforms.reverseVelocityMixFactor.value = reverseVelocityMixFactor
-      computeUniforms.velocityThreshold.value = velocityThreshold
-      computeUniforms.smoothFactor.value = smoothFactor
       setTime(now)
 
       setDelay(delay - 1)
