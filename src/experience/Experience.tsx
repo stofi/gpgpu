@@ -14,7 +14,8 @@ export default function Experience(props: { enableDebug?: boolean }) {
     <>
       <Leva hidden={!props.enableDebug} />
       <Canvas
-        flat={false}
+        flat={true}
+        linear={false}
         dpr={1}
         camera={{
           position: [0, 0, 10],

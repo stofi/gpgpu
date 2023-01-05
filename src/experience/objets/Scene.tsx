@@ -7,15 +7,16 @@ import { button, useControls } from 'leva'
 
 import Fluid from './Fluid'
 import GameOfLife from './GameOfLife'
-import Slime from './Slime/Slime'
+import Sand from './Sand'
+import Slime from './Slime'
 
 type TResolutions = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096
 
 export default function Scene() {
   const { experiment, resolution } = useControls({
     experiment: {
-      value: 'slime',
-      options: ['fluid', 'slime', 'gameOfLife'],
+      value: 'sand',
+      options: ['fluid', 'slime', 'gameOfLife', 'sand'],
     },
     resolution: {
       value: 512 as TResolutions,
@@ -40,9 +41,11 @@ export default function Scene() {
       <Fluid width={resolution} />
     ) : experiment === 'slime' ? (
       <Slime width={resolution} />
-    ) : (
+    ) : experiment === 'gameOfLife' ? (
       <GameOfLife width={resolution} />
-    )
+    ) : experiment === 'sand' ? (
+      <Sand width={resolution} />
+    ) : null
   ) : null
 
   return (
