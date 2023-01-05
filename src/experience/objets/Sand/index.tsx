@@ -50,20 +50,29 @@ interface FluidProps {
 }
 
 export default function Fluid({ width = 1024 }: FluidProps) {
-  const { frameDelay, alphaThreshold } = useControls('Fluid Glitch', {
-    frameDelay: {
-      value: 0,
-      min: 0,
-      max: 100,
-      step: 1,
+  const { frameDelay, alphaThreshold, iterations } = useControls(
+    'Fluid Glitch',
+    {
+      frameDelay: {
+        value: 0,
+        min: 0,
+        max: 100,
+        step: 1,
+      },
+      alphaThreshold: {
+        value: 0.05,
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
+      iterations: {
+        value: 1,
+        min: 1,
+        max: 20,
+        step: 1,
+      },
     },
-    alphaThreshold: {
-      value: 0.05,
-      min: 0,
-      max: 1,
-      step: 0.01,
-    },
-  })
+  )
 
   const [computeRenderer, setComputeRenderer] =
     useState<GPUComputationRenderer | null>(null)
@@ -180,9 +189,10 @@ export default function Fluid({ width = 1024 }: FluidProps) {
       setDelay(delay - 1)
 
       if (delay < 0) {
-        computeRenderer.compute()
+        for (let i = 0; i < iterations; i++) computeRenderer.compute()
         computeUniforms.isClicked.value = false
         computeUniforms.click.value = new THREE.Vector2(0, 0)
+
         setDelay(frameDelay)
       }
 
