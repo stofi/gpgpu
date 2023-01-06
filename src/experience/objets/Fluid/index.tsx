@@ -97,7 +97,10 @@ export default function Fluid({ width = 1024 }: FluidProps) {
     [uniform: string]: THREE.IUniform<any>
   }>(defaultUniforms)
 
-  const initGpuCompute = async (gl: THREE.WebGLRenderer) => {
+  const initGpuCompute = async (
+    gl: THREE.WebGLRenderer,
+    uniforms: TUniform,
+  ) => {
     const gpuCompute = new GPUComputationRenderer(width, width, gl)
 
     if (gl.capabilities.isWebGL2 === false) {
@@ -113,7 +116,7 @@ export default function Fluid({ width = 1024 }: FluidProps) {
 
     gpuCompute.setVariableDependencies(valueVariable, [valueVariable])
 
-    Object.assign(valueVariable.material.uniforms, defaultUniforms)
+    Object.assign(valueVariable.material.uniforms, uniforms)
 
     setComputeUniforms(valueVariable.material.uniforms)
 
@@ -181,7 +184,7 @@ export default function Fluid({ width = 1024 }: FluidProps) {
 
     //
     if (!computeRenderer) {
-      initGpuCompute(state.gl)
+      initGpuCompute(state.gl, defaultUniforms)
     } else {
       const now = performance.now()
       computeUniforms.time.value = now

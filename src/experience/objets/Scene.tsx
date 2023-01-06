@@ -50,7 +50,7 @@ export default function Scene() {
 
   return (
     <>
-      <OrbitControls makeDefault enableRotate={true} />
+      <OrbitControls makeDefault enableRotate={false} />
 
       <directionalLight position={[3, 10, -5]} />
 
