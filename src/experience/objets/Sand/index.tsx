@@ -9,6 +9,7 @@ import { Environment, OrbitControls } from '@react-three/drei'
 import { ThreeEvent, useFrame } from '@react-three/fiber'
 
 import { useControls } from 'leva'
+import type { Schema } from 'leva/src/types'
 
 import FluidMaterial from '../../materials/FluidMaterial'
 import simFragment from './sim.glsl'
@@ -36,17 +37,17 @@ type TControl = {
   label?: string
 }
 
-class Contols {
-  constructor(public options: Record<string, TControl>) {
+class Contols<T extends string> {
+  constructor(public options: Record<T, TControl>) {
     this.setUniforms()
     this.setControls()
   }
 
   private $uniforms: TUniform = {}
-  private $controls: Record<string, TControl> = {}
+  private $controls: Record<T, TControl> = {} as Record<T, TControl>
 
   setUniforms() {
-    Object.entries(this.options).forEach(([name, control]) => {
+    Object.entries<TControl>(this.options).forEach(([name, control]) => {
       if (!control.controlOnly) {
         this.$uniforms[name] = { value: control.value }
       }
@@ -54,7 +55,7 @@ class Contols {
   }
 
   setControls() {
-    const ctrls = Object.entries(this.options).reduce(
+    const ctrls = Object.entries<TControl>(this.options).reduce(
       (acc, [name, control]) => {
         if (!control.uniformOnly) {
           acc[name] = control
@@ -72,7 +73,12 @@ class Contols {
   }
 
   getControls() {
-    return this.$controls
+    // type of return is Schema but with keys of this.$controls
+    type TSchemaItemWithOptions = Schema[keyof Schema]
+
+    type TSchema = Record<keyof typeof this.$controls, TSchemaItemWithOptions>
+
+    return this.$controls as TSchema
   }
 }
 
@@ -80,7 +86,7 @@ interface FluidProps {
   width?: 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096
 }
 
-const controlsOptions: Record<string, TControl> = {
+const controlsOptions = {
   time: {
     uniformOnly: true,
     value: 0.0,
@@ -152,6 +158,7 @@ const controlsFactory = new Contols(controlsOptions)
 
 export default function Fluid({ width = 1024 }: FluidProps) {
   const controls = useControls('Falling Sand', controlsFactory.getControls())
+  // const test = useControls('Test', { test: 0 })
 
   const [computeRenderer, setComputeRenderer] =
     useState<GPUComputationRenderer | null>(null)
@@ -300,10 +307,18 @@ export default function Fluid({ width = 1024 }: FluidProps) {
       stateUniforms.brushSize.value = controls.brushSize
       stateUniforms.brushColorRandom.value = controls.brushColorRandom
 
-      stateUniforms.brushColor.value = new THREE.Color(controls.brushColor)
+      stateUniforms.brushColor.value = new THREE.Color(
+        controls.brushColor as string,
+      )
       setTime(now)
 
-      setDelay(delay - 1)
+      const d =
+        typeof delay === 'number'
+          ? delay
+          : typeof delay === 'string'
+          ? parseInt(delay)
+          : 0
+      setDelay(d - 1)
 
       if (delay < 0) {
         for (let i = 0; i < controls.iterations; i++) computeRenderer.compute()
