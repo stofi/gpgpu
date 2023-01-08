@@ -4,6 +4,8 @@ uniform float noiseScale2;
 uniform float reverseVelocityMixFactor;
 uniform float velocityThreshold;
 uniform float smoothFactor;
+uniform bool brushColorRandom;
+uniform vec3 brushColor;
 #include "opensimplex.glsl"
 #include "click.glsl"
 
@@ -18,7 +20,19 @@ void main() {
   if(isClicked) {
     c = handleClick(uv);
   }
+  vec4 brush = vec4(brushColor, 1.);
+  if(brushColorRandom) {
+    brush = openSimplex2SDerivativesPart(vec3(uv, time));
+    brush.w = 1.;
+    brush = brush * 0.5 + 0.5;
+    brush = normalize(brush);
+  }
+  if(isInMask(3)) {
+    brush = vec4(0.);
+    c = handleClick(uv);
+  }
+
   vec4 state = texture2D(textureSolid, uv);
   gl_FragColor = state;
-  gl_FragColor = mix(gl_FragColor, vec4(1.), c);
+  gl_FragColor = mix(gl_FragColor, brush, c);
 }
