@@ -113,6 +113,134 @@ bool canFallToLeft(vec2 uv) {
   return !bellowLeft && spaceBellowLeftIsNotOutOfBounds > 0.;
 }
 
+bool canSlideRight(vec2 uv) {
+  bool solid = isSolid(uv);
+  if(solid)
+    return false;
+  bool state = isCellActive(uv);
+  if(!state)
+    return false;
+
+  bool fallDown = canFallDown(uv);
+  if(fallDown)
+    return false;
+
+  bool fallRight = canFallToRight(uv);
+  if(fallRight)
+    return false;
+
+  bool fallLeft = canFallToLeft(uv);
+  if(fallLeft)
+    return false;
+
+  vec2 rigthAboveUv = uv + pixelSize * vec2(1., 1.);
+  bool rightAboveWillFall = canFallDown(rigthAboveUv);
+  if(rightAboveWillFall)
+    return false;
+
+  vec2 rightRightAboveUv = uv + pixelSize * vec2(2., 1.);
+  bool rightRightAboveWillFallLeft = canFallToLeft(rightRightAboveUv);
+  if(rightRightAboveWillFallLeft)
+    return false;
+
+  vec2 aboveUv = uv + pixelSize * vec2(0., 1.);
+  bool above = isCellActive(aboveUv);
+  if(above)
+    return false;
+
+  bool aboveWillFallRight = canFallToRight(aboveUv);
+  if(aboveWillFallRight)
+    return false;
+
+  vec2 bellowUv = uv + pixelSize * vec2(0., -1.);
+  if(bellowUv.y < 0.)
+    return false;
+
+  vec2 rightUv = uv + pixelSize * vec2(1., 0.);
+  bool right = isCellActive(rightUv);
+  if(right)
+    return false;
+
+  bool bellow = isCellActive(bellowUv);
+
+  if(!bellow)
+    return false;
+
+  vec2 bellowRightUv = uv + pixelSize * vec2(1., -1.);
+  bool bellowRight = isCellActive(bellowRightUv);
+  float spaceBellowRightIsNotOutOfBounds = step(0.0, 1. - bellowRightUv.y);
+  return bellowRight && spaceBellowRightIsNotOutOfBounds > 0.;
+}
+
+bool canSlideLeft(vec2 uv) {
+  bool solid = isSolid(uv);
+  if(solid)
+    return false;
+  bool state = isCellActive(uv);
+  if(!state)
+    return false;
+
+  bool fallDown = canFallDown(uv);
+  if(fallDown)
+    return false;
+
+  bool fallRight = canFallToRight(uv);
+  if(fallRight)
+    return false;
+
+  bool fallLeft = canFallToLeft(uv);
+  if(fallLeft)
+    return false;
+
+  bool slideRight = canSlideRight(uv);
+  if(slideRight)
+    return false;
+
+  vec2 leftAboveUv = uv + pixelSize * vec2(-1., 1.);
+  bool leftAboveWillFall = canFallDown(leftAboveUv);
+  if(leftAboveWillFall)
+    return false;
+
+  vec2 leftLeftAboveUv = uv + pixelSize * vec2(-2., 1.);
+  bool leftLeftAboveWillFallRight = canFallToRight(leftLeftAboveUv);
+  if(leftLeftAboveWillFallRight)
+    return false;
+
+  vec2 aboveUv = uv + pixelSize * vec2(0., 1.);
+  // bool above = isCellActive(aboveUv);
+  // if(above)
+  //   return false;
+
+  bool aboveWillFallLeft = canFallToLeft(aboveUv);
+  if(aboveWillFallLeft)
+    return false;
+
+  vec2 leftLeftUv = uv + pixelSize * vec2(-2., 0.);
+  bool leftLeftWillSlideRight = canSlideRight(leftLeftUv);
+  if(leftLeftWillSlideRight)
+    return false;
+
+  vec2 bellowUv = uv + pixelSize * vec2(0., -1.);
+  if(bellowUv.y < 0.)
+    return false;
+
+  vec2 leftUv = uv + pixelSize * vec2(-1., 0.);
+  bool left = isCellActive(leftUv);
+  if(left)
+    return false;
+
+  bool bellow = isCellActive(bellowUv);
+
+  if(!bellow)
+    return false;
+
+  vec2 bellowLeftUv = uv + pixelSize * vec2(-1., -1.);
+  bool bellowLeft = isCellActive(bellowLeftUv);
+
+  float spaceBellowLeftIsNotOutOfBounds = step(0.0, bellowLeftUv.y);
+  return bellowLeft && spaceBellowLeftIsNotOutOfBounds > 0.;
+}
+
 vec4 sim() {
   vec2 uv = gl_FragCoord.xy / resolution.xy;
   bool solid = isSolid(uv);
@@ -126,6 +254,11 @@ vec4 sim() {
   bool aboveLeftFallRight = canFallToRight(uv + pixelSize * vec2(-1., 1.));
   bool fallLeft = canFallToLeft(uv);
   bool aboveRightFallLeft = canFallToLeft(uv + pixelSize * vec2(1., 1.));
+
+  bool slideRight = canSlideRight(uv);
+  bool leftSlideRight = canSlideRight(uv + pixelSize * vec2(-1., 0.));
+  bool slideLeft = canSlideLeft(uv);
+  bool rightSlideLeft = canSlideLeft(uv + pixelSize * vec2(1., 0.));
 
   vec4 result = prevState;
 
@@ -146,6 +279,18 @@ vec4 sim() {
   }
   if(aboveRightFallLeft) {
     result = texture2D(textureValue, uv + pixelSize * vec2(1., 1.));
+  }
+  // if(slideRight) {
+  //   result = vec4(0.0, 0.0, 0.0, 0.0);
+  // }
+  // if(leftSlideRight) {
+  //   result = texture2D(textureValue, uv + pixelSize * vec2(-1., 0.));
+  // }
+  if(slideLeft) {
+    result = vec4(0.0, 0.0, 0.0, 0.0);
+  }
+  if(rightSlideLeft) {
+    result = texture2D(textureValue, uv + pixelSize * vec2(1., 0.));
   }
 
   return result;
