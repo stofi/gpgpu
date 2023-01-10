@@ -43,20 +43,17 @@ bool canFallDown(vec2 uv) {
 }
 
 bool basicFallCheck(vec2 uv) {
-  bool solid = isSolid(uv);
-  if(solid)
+  if(isSolid(uv))
     return false;
-  bool state = isCellActive(uv);
-  if(!state)
+  if(!isCellActive(uv))
     return false;
 
-  bool fallDown = canFallDown(uv);
-  if(fallDown)
+  if(canFallDown(uv))
     return false;
 
   vec2 aboveUv = uv + pixelSize * vec2(0., 1.);
-  bool above = isCellActive(aboveUv);
-  if(above)
+  bool aboveOutOfBounds = aboveUv.y > 1.;
+  if(isCellActive(aboveUv) && !isSolid(aboveUv) && !aboveOutOfBounds)
     return false;
 
   vec2 bellowUv = uv + pixelSize * vec2(0., -1.);
@@ -77,8 +74,7 @@ bool offsetFallCheck(vec2 uv, vec2 offset) {
 
   // check if below offset is occupied and return false if it is
   vec2 bellowOffsetUv = uv + pixelSize * (offset + vec2(0., -1.));
-  bool bellowOffset = isCellActive(bellowOffsetUv);
-  if(bellowOffset)
+  if(isCellActive(bellowOffsetUv))
     return false;
 
   // check if below offset is out of bounds
@@ -93,6 +89,10 @@ bool offsetFallCheck(vec2 uv, vec2 offset) {
 }
 
 bool canFallToRight(vec2 uv) {
+  bool switchMove = tick % 2 == 0;
+  if(!switchMove)
+    return false;
+
   if(!basicFallCheck(uv))
     return false;
 
@@ -103,6 +103,9 @@ bool canFallToRight(vec2 uv) {
 }
 
 bool canFallToLeft(vec2 uv) {
+  bool switchMove = tick % 2 == 0;
+  if(!switchMove)
+    return false;
   if(!basicFallCheck(uv))
     return false;
 
@@ -123,7 +126,7 @@ bool slideOffsetCheck(vec2 uv, vec2 offset) {
     return false;
 
   vec2 offsetAboveUv = uv + pixelSize * (offset + vec2(0., 1.));
-  if(canFallDown(offsetAboveUv))
+  if(canFallDown(offsetAboveUv) && !isSolid(offsetAboveUv))
     return false;
 
   vec2 offsetOffsetAboveUv = uv + pixelSize * (offset * 2.);
@@ -144,6 +147,9 @@ bool slideOffsetCheck(vec2 uv, vec2 offset) {
 }
 
 bool canSlideRightFirst(vec2 uv) {
+  bool switchMove = tick % 2 == 0;
+  if(switchMove)
+    return false;
   if(!basicFallCheck(uv))
     return false;
 
@@ -161,6 +167,9 @@ bool canSlideRightFirst(vec2 uv) {
 }
 
 bool canSlideLeftFirst(vec2 uv) {
+  bool switchMove = tick % 2 == 0;
+  if(switchMove)
+    return false;
   if(!basicFallCheck(uv))
     return false;
 
@@ -170,9 +179,6 @@ bool canSlideLeftFirst(vec2 uv) {
   if(canFallToLeft(uv))
     return false;
 
-  if(canSlideRightFirst(uv))
-    return false;
-
   if(!slideOffsetCheck(uv, vec2(-1., 0.)))
     return false;
 
@@ -180,7 +186,9 @@ bool canSlideLeftFirst(vec2 uv) {
 }
 
 bool canSlideRight(vec2 uv) {
-  // return false;
+  bool switchMove = tick % 2 == 0;
+  if(switchMove)
+    return false;
   if(!basicFallCheck(uv))
     return false;
 
@@ -204,7 +212,9 @@ bool canSlideRight(vec2 uv) {
 }
 
 bool canSlideLeft(vec2 uv) {
-  // return false;
+  bool switchMove = tick % 2 == 0;
+  if(switchMove)
+    return false;
   if(!basicFallCheck(uv))
     return false;
 
@@ -228,7 +238,7 @@ bool canSlideLeft(vec2 uv) {
 }
 
 bool willMove(vec2 uv) {
-  bool slideRight = tick % 2 == 0;
+  bool slideRight = false;
   if(canFallDown(uv) || (enableDiagonal && (canFallToRight(uv) || canFallToLeft(uv)))) {
     return true;
   }
@@ -241,31 +251,39 @@ bool willMove(vec2 uv) {
   return false;
 }
 vec4 cellToMoveInto(vec2 uv) {
-  bool slideRight = tick % 2 == 0;
+  bool slideRight = false;
+  bool switchMove = tick % 2 == 0;
   vec4 result = vec4(0.0, 0.0, 0.0, 0.0);
-  if(canFallDown(uv + pixelSize * vec2(0., 1.))) {
+  vec2 aboveUv = uv + pixelSize * vec2(0., 1.);
+  vec2 leftUv = uv + pixelSize * vec2(-1., 0.);
+  vec2 rightUv = uv + pixelSize * vec2(1., 0.);
+  vec2 leftAboveUv = uv + pixelSize * vec2(-1., 1.);
+  vec2 rightAboveUv = uv + pixelSize * vec2(1., 1.);
+  if(aboveUv.y > 1.)
+    return result;
+  if(canFallDown(aboveUv)) {
     result = texture2D(textureValue, uv + pixelSize * vec2(0., 1.));
   }
-  if(enableDiagonal) {
-    if(canFallToRight(uv + pixelSize * vec2(-1., 1.))) {
+  if(enableDiagonal && switchMove) {
+    if(canFallToRight(leftAboveUv)) {
       result = texture2D(textureValue, uv + pixelSize * vec2(-1., 1.));
     }
-    if(canFallToLeft(uv + pixelSize * vec2(1., 1.))) {
+    if(canFallToLeft(rightAboveUv)) {
       result = texture2D(textureValue, uv + pixelSize * vec2(1., 1.));
     }
   }
-  if(enableSlide && slideRight) {
-    if(canSlideRightFirst(uv + pixelSize * vec2(-1., 0.))) {
+  if(enableSlide && slideRight && !switchMove) {
+    if(canSlideRightFirst(leftUv)) {
       result = texture2D(textureValue, uv + pixelSize * vec2(-1., 0.));
     }
-    if(canSlideLeft(uv + pixelSize * vec2(1., 0.))) {
+    if(canSlideLeft(rightUv)) {
       result = texture2D(textureValue, uv + pixelSize * vec2(1., 0.));
     }
-  } else if(enableSlide && !slideRight) {
-    if(canSlideLeftFirst(uv + pixelSize * vec2(1., 0.))) {
+  } else if(enableSlide && !slideRight && !switchMove) {
+    if(canSlideLeftFirst(rightUv)) {
       result = texture2D(textureValue, uv + pixelSize * vec2(1., 0.));
     }
-    if(canSlideRight(uv + pixelSize * vec2(-1., 0.))) {
+    if(canSlideRight(leftUv)) {
       result = texture2D(textureValue, uv + pixelSize * vec2(-1., 0.));
     }
   }
