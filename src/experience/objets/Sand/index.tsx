@@ -11,78 +11,13 @@ import { ThreeEvent, useFrame } from '@react-three/fiber'
 import { useControls } from 'leva'
 import type { Schema } from 'leva/src/types'
 
-import FluidMaterial from '../../materials/FluidMaterial'
+import { ControlsFactory, TControl, TUniform } from '../../../ControlsFactory'
+// const WIDTH = 1024
+import { sRGBChannelToLinear } from '../../../utils'
 import simFragment from './sim.glsl'
 import solidFragment from './solid.glsl'
 
-// const WIDTH = 1024
-
-type TUniform = {
-  [uniform: string]: THREE.IUniform<any>
-}
-
-function sRGBChannelToLinear(sRGB: number) {
-  return sRGB <= 0.04045 ? sRGB / 12.92 : Math.pow((sRGB + 0.055) / 1.055, 2.4)
-}
-
-// TControl is used to create uniforms and controls
-type TControl = {
-  value: number | THREE.Vector2 | THREE.Vector3 | boolean | string
-  min?: number
-  max?: number
-  step?: number
-  options?: Record<string, number>
-  uniformOnly?: boolean
-  controlOnly?: boolean
-  label?: string
-}
-
-class Contols<T extends string> {
-  constructor(public options: Record<T, TControl>) {
-    this.setUniforms()
-    this.setControls()
-  }
-
-  private $uniforms: TUniform = {}
-  private $controls: Record<T, TControl> = {} as Record<T, TControl>
-
-  setUniforms() {
-    Object.entries<TControl>(this.options).forEach(([name, control]) => {
-      if (!control.controlOnly) {
-        this.$uniforms[name] = { value: control.value }
-      }
-    })
-  }
-
-  setControls() {
-    const ctrls = Object.entries<TControl>(this.options).reduce(
-      (acc, [name, control]) => {
-        if (!control.uniformOnly) {
-          acc[name] = control
-        }
-
-        return acc
-      },
-      {} as Record<string, any>,
-    )
-    this.$controls = ctrls
-  }
-
-  getUniforms() {
-    return this.$uniforms
-  }
-
-  getControls() {
-    // type of return is Schema but with keys of this.$controls
-    type TSchemaItemWithOptions = Schema[keyof Schema]
-
-    type TSchema = Record<keyof typeof this.$controls, TSchemaItemWithOptions>
-
-    return this.$controls as TSchema
-  }
-}
-
-interface FluidProps {
+interface SandProps {
   width?: 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096
 }
 
@@ -145,18 +80,30 @@ const controlsOptions = {
     label: 'Threshold',
   },
   iterations: {
-    value: 1,
+    value: 20,
     min: 1,
-    max: 20,
+    max: 100,
     step: 1,
     controlOnly: true,
     label: 'Iterations',
   },
+  enableDiagonal: {
+    value: true,
+    label: 'Diagonal',
+  },
+  enableSlide: {
+    value: true,
+    label: 'Slide',
+  },
+  tick: {
+    value: 0,
+    uniformOnly: true,
+  },
 }
 
-const controlsFactory = new Contols(controlsOptions)
+const controlsFactory = new ControlsFactory(controlsOptions)
 
-export default function Fluid({ width = 1024 }: FluidProps) {
+export default function Sand({ width = 1024 }: SandProps) {
   const controls = useControls('Falling Sand', controlsFactory.getControls())
   // const test = useControls('Test', { test: 0 })
 
@@ -168,9 +115,9 @@ export default function Fluid({ width = 1024 }: FluidProps) {
   const [valueVariable, setValueVariable] = useState<Variable | null>(null)
   const [solidVariable, setSolidVariable] = useState<Variable | null>(null)
 
-  const [stateUniforms, setComputeUniforms] = useState<{
-    [uniform: string]: THREE.IUniform<any>
-  }>(controlsFactory.getUniforms())
+  const [stateUniforms, setComputeUniforms] = useState(
+    controlsFactory.getUniforms(),
+  )
 
   const initGpuCompute = async (gl: THREE.WebGLRenderer) => {
     const gpuCompute = new GPUComputationRenderer(width, width, gl)
@@ -214,7 +161,12 @@ export default function Fluid({ width = 1024 }: FluidProps) {
       solidVariable.material.uniforms,
       controlsFactory.getUniforms(),
     )
-    setComputeUniforms(valueVariable.material.uniforms)
+
+    setComputeUniforms(
+      valueVariable.material.uniforms as ReturnType<
+        typeof controlsFactory.getUniforms
+      >,
+    )
 
     const error = gpuCompute.init()
 
@@ -306,6 +258,9 @@ export default function Fluid({ width = 1024 }: FluidProps) {
 
       stateUniforms.brushSize.value = controls.brushSize
       stateUniforms.brushColorRandom.value = controls.brushColorRandom
+      stateUniforms.enableDiagonal.value = controls.enableDiagonal
+      stateUniforms.enableSlide.value = controls.enableSlide
+      stateUniforms.tick.value += 1
 
       stateUniforms.brushColor.value = new THREE.Color(
         controls.brushColor as string,
@@ -321,7 +276,10 @@ export default function Fluid({ width = 1024 }: FluidProps) {
       setDelay(d - 1)
 
       if (delay < 0) {
-        for (let i = 0; i < controls.iterations; i++) computeRenderer.compute()
+        for (let i = 0; i < controls.iterations; i++) {
+          computeRenderer.compute()
+          stateUniforms.tick.value += 1
+        }
         stateUniforms.isClicked.value = false
         stateUniforms.click.value = new THREE.Vector2(0, 0)
 
