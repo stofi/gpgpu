@@ -92,7 +92,7 @@ const controlsOptions = {
     label: 'Diagonal',
   },
   enableSlide: {
-    value: true,
+    value: false,
     label: 'Slide',
   },
   tick: {
