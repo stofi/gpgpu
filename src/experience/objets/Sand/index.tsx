@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Environment, Html, OrbitControls } from '@react-three/drei'
 import { ThreeEvent, useFrame } from '@react-three/fiber'
 
-import { useControls } from 'leva'
+import { button, useControls } from 'leva'
 import type { Schema } from 'leva/src/types'
 
 import { ControlsFactory, TControl, TUniform } from '../../../ControlsFactory'
@@ -86,7 +86,7 @@ const controlsOptions: Record<string, TControl> = {
     label: 'Threshold',
   },
   iterations: {
-    value: 20,
+    value: 1,
     min: 1,
     max: 100,
     step: 1,
@@ -128,6 +128,7 @@ const controlsFactory = new ControlsFactory(controlsOptions)
 
 export default function Sand({ width = 1024 }: SandProps) {
   const controls = useControls('Falling Sand', controlsFactory.getControls())
+
   // const test = useControls('Test', { test: 0 })
 
   const [computeRenderer, setComputeRenderer] =
@@ -148,8 +149,6 @@ export default function Sand({ width = 1024 }: SandProps) {
 
     const dtValue = gpuCompute.createTexture()
     const dtSolid = gpuCompute.createTexture()
-
-    const dtDebug = gpuCompute.createTexture()
 
     await fillValueTexture(dtValue)
     await fillSolidTexture(dtSolid)

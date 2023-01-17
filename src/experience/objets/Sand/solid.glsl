@@ -6,7 +6,6 @@ uniform float velocityThreshold;
 uniform float smoothFactor;
 uniform bool brushColorRandom;
 uniform vec3 brushColor;
-#include "opensimplex.glsl"
 #include "click.glsl"
 
 const int mask = 2;
@@ -21,12 +20,7 @@ void main() {
     c = handleClick(uv);
   }
   vec4 brush = vec4(brushColor, 1.);
-  if(brushColorRandom) {
-    brush = openSimplex2SDerivativesPart(vec3(uv, time));
-    brush.w = 1.;
-    brush = brush * 0.5 + 0.5;
-    brush = normalize(brush);
-  }
+
   if(isInMask(3)) {
     brush = vec4(0.);
     c = handleClick(uv);

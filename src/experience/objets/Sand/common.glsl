@@ -1,4 +1,16 @@
-uniform int tick;
+vec2 mapUvToUnit(vec2 uv) {
+  vec2 origin = gl_FragCoord.xy / resolution.xy;
+  vec2 offset = uv - origin;
+  vec2 unitOffset = offset / pixelSize;
+  return unitOffset;
+}
+
+vec2 mapUnitToUv(vec2 unit) {
+  vec2 origin = gl_FragCoord.xy / resolution.xy;
+  vec2 offset = unit * pixelSize;
+  vec2 uv = origin + offset;
+  return uv;
+}
 
 bool isSolid(vec2 uv) {
   vec4 state = texture2D(textureSolid, uv);
@@ -11,56 +23,36 @@ bool isCellActive(vec2 uv) {
 }
 
 bool basicFallCheck(vec2 uv) {
-  // If this cell is solid, it can't fall
   if(isSolid(uv))
     return false;
-  // If this cell is not active, it can't fall
   if(!isCellActive(uv))
     return false;
 
-  // vec2 aboveUv = uv + pixelSize * vec2(0., 1.);
-  // bool aboveOutOfBounds = aboveUv.y > 1.;
-  // if(isCellActive(aboveUv) && !isSolid(aboveUv) && !aboveOutOfBounds)
-  //   return false;
-
   vec2 bellowUv = uv + pixelSize * vec2(0., -1.);
 
-  // If the cell below is out of bounds, it can't fall
   if(bellowUv.y < 0.)
     return false;
 
-  // If the cell below is active, it can't fall
   if(isCellActive(bellowUv))
     return false;
 
-  // If the cell below is solid, it can't fall
   if(isSolid(bellowUv))
     return false;
 
   return true;
 }
 bool basicFallCheckOffset(vec2 uv, vec2 offset) {
-  // If this cell is solid, it can't fall
   if(isSolid(uv))
     return false;
-  // If this cell is not active, it can't fall
   if(!isCellActive(uv))
     return false;
 
-  // vec2 aboveUv = uv + pixelSize * vec2(0., 1.);
-  // bool aboveOutOfBounds = aboveUv.y > 1.;
-  // if(isCellActive(aboveUv) && !isSolid(aboveUv) && !aboveOutOfBounds)
-  //   return false;
-
   vec2 offsetUv = uv + pixelSize * offset;
-  // if offsetUv is out of bounds, it can't fall
   if(offsetUv.x < 0. || offsetUv.x > 1.)
     return false;
-  // If the cell at the offset is active, it can't fall
   if(isCellActive(offsetUv))
     return false;
 
-  // If the cell at the offset is solid, it can't fall
   if(isSolid(offsetUv))
     return false;
 
@@ -72,11 +64,9 @@ bool basicFallCheckOffset(vec2 uv, vec2 offset) {
   if(bellowOffsetUv.y < 0.)
     return false;
 
-  // If cell below offset is active, it can't fall
   if(isCellActive(bellowOffsetUv))
     return false;
 
-  // If cell below offset is solid, it can't fall
   if(isSolid(bellowOffsetUv))
     return false;
 
@@ -89,51 +79,52 @@ bool canFallDown(vec2 uv) {
 
   return true;
 }
+
 bool slideOffsetCheck(vec2 uv, vec2 offset) {
-  // If this cell is solid, it can't slide
-  if(isSolid(uv))
-    return false;
-  // If this cell is not active, it can't slide
-  if(!isCellActive(uv))
-    return false;
-
   vec2 offsetUv = uv + pixelSize * offset;
-  // if offsetUv is out of bounds, it can't slide
-  if(offsetUv.x < 0. || offsetUv.x > 1.)
-    return false;
-
-  // If the cell at the offset is solid, it can't slide
-  if(isSolid(offsetUv))
-    return false;
-
-  // If the cell at the offset is active, it can't slide
-  if(isCellActive(offsetUv))
-    return false;
-
   vec2 aboveUv = uv + pixelSize * vec2(0., 1.);
-  // if cellAbove is active, not solid and not out of bounds, it can't slide
-  if(isCellActive(aboveUv) && !isSolid(aboveUv) && aboveUv.y < 1.)
-    return false;
-
   vec2 aboveOffsetUv = uv + pixelSize * (offset + vec2(0., 1.));
-  // if cellAboveOffset is active, it can't slide
-  if(isCellActive(aboveOffsetUv) && !isSolid(aboveOffsetUv))
-    return false;
-
   vec2 offset2Uv = uv + pixelSize * (offset * 2.);
-  // if cellOffset2 is active, not solid and not out of bounds, it can't slide
-  if(isCellActive(offset2Uv) && !isSolid(offset2Uv) && offset2Uv.x > 0. && offset2Uv.x < 1.)
-    return false;
-
   vec2 bellowUv = uv + pixelSize * vec2(0., -1.);
   vec2 bellowOffsetUv = uv + pixelSize * (offset + vec2(0., -1.));
 
-  // both the cells below and below the offset must be either solid, active, or out of bounds for sliding to be possible
+    // Check if cell is out of bounds
+  if(offsetUv.x < 0. || offsetUv.x > 1.) {
+    return false;
+  }
 
+    // Check if cell is solid or active
+  bool offsetSolid = isSolid(offsetUv);
+  bool offsetActive = isCellActive(offsetUv);
+  if(offsetSolid || offsetActive) {
+    return false;
+  }
+
+    // Check if cell above is active and not solid
+  bool aboveActive = isCellActive(aboveUv);
+  bool aboveSolid = isSolid(aboveUv);
+  if(aboveActive && !aboveSolid && aboveUv.y < 1.) {
+    return false;
+  }
+
+    // Check if cell above offset is active and not solid
+  bool aboveOffsetActive = isCellActive(aboveOffsetUv);
+  bool aboveOffsetSolid = isSolid(aboveOffsetUv);
+  if(aboveOffsetActive && !aboveOffsetSolid) {
+    return false;
+  }
+
+    // Check if cell 2 offset is active and not solid
+  bool offset2Active = isCellActive(offset2Uv);
+  bool offset2Solid = isSolid(offset2Uv);
+  if(offset2Active && !offset2Solid && offset2Uv.x > 0. && offset2Uv.x < 1.) {
+    return false;
+  }
+
+    // Check if cells bellow are both solid or active
   bool bellowSolidOrActive = isSolid(bellowUv) || isCellActive(bellowUv);
   bool bellowOffsetSolidOrActive = isSolid(bellowOffsetUv) || isCellActive(bellowOffsetUv);
-  bool bothBellowSolidOrActive = bellowSolidOrActive && bellowOffsetSolidOrActive;
-
+  bool bothBellowSolidOrActive = bellowSolidOrActive || bellowOffsetSolidOrActive;
   bool bellowOutOfBounds = bellowUv.y < 0.;
 
   bool bellowCondition = bellowOutOfBounds || bothBellowSolidOrActive;
@@ -142,116 +133,34 @@ bool slideOffsetCheck(vec2 uv, vec2 offset) {
     return false;
 
   return true;
-
 }
 
 bool canFallToOffset(vec2 uv, vec2 offset) {
-  if(canFallDown(uv))
-    return false;
-
-  if(!basicFallCheckOffset(uv, offset))
-    return false;
-
-  return true;
+  return !canFallDown(uv) && basicFallCheckOffset(uv, offset);
 }
 
 bool canSlideRightFirst(vec2 uv) {
-  if(canFallDown(uv))
-    return false;
-
-  // if(canFallToRight(uv))
-  //   return false;
-
-  // if(canFallToLeft(uv))
-  //   return false;
-
-  if(!slideOffsetCheck(uv, vec2(1., 0.)))
-    return false;
-
-  return true;
-
+  return !canFallDown(uv) && slideOffsetCheck(uv, vec2(1., 0.));
 }
 
 bool canSlideLeftFirst(vec2 uv) {
-  if(canFallDown(uv))
-    return false;
-
-  // if(canFallToRight(uv))
-  //   return false;
-
-  // if(canFallToLeft(uv))
-  //   return false;
-
-  if(!slideOffsetCheck(uv, vec2(-1., 0.)))
-    return false;
-
-  return true;
+  return !canFallDown(uv) && slideOffsetCheck(uv, vec2(-1., 0.));
 }
-
 bool canSlideRight(vec2 uv) {
-  if(canFallDown(uv))
-    return false;
-
-  // if(canFallToRight(uv))
-  //   return false;
-
-  // if(canFallToLeft(uv))
-  //   return false;
-
-  if(canSlideLeftFirst(uv))
-    return false;
-
-  vec2 rightRightUv = uv + pixelSize * vec2(2., 0.);
-  if(canSlideLeftFirst(rightRightUv))
-    return false;
-
-  if(!slideOffsetCheck(uv, vec2(1., 0.)))
-    return false;
-
-  return true;
+  return !(canFallDown(uv) || canSlideLeftFirst(uv) || canSlideLeftFirst(uv + pixelSize * vec2(2., 0.)) || !slideOffsetCheck(uv, vec2(1., 0.)));
 }
 
 bool canSlideLeft(vec2 uv) {
-  if(canFallDown(uv))
+  if(canFallDown(uv) || canSlideRightFirst(uv) || canSlideRightFirst(uv + pixelSize * vec2(-2., 0.)))
     return false;
 
-  // if(canFallToRight(uv))
-  //   return false;
-
-  // if(canFallToLeft(uv))
-  //   return false;
-
-  if(canSlideRightFirst(uv))
-    return false;
-
-  vec2 leftLeftUv = uv + pixelSize * vec2(-2., 0.);
-  if(canSlideRightFirst(leftLeftUv))
-    return false;
-
-  if(!slideOffsetCheck(uv, vec2(-1., 0.)))
-    return false;
-
-  return true;
+  return slideOffsetCheck(uv, vec2(-1., 0.));
 }
 
 bool canFallToRight(vec2 uv) {
-  if(canSlideRight(uv))
-    return false;
-
-  if(canSlideLeft(uv))
-    return false;
-
-  return canFallToOffset(uv, vec2(1., 0.));
+  return !canSlideRight(uv) && !canSlideLeft(uv) && canFallToOffset(uv, vec2(1., 0.));
 }
 
 bool canFallToLeft(vec2 uv) {
-  if(canSlideRight(uv))
-    return false;
-
-  if(canSlideLeft(uv))
-    return false;
-  if(canFallToRight(uv))
-    return false;
-
-  return canFallToOffset(uv, vec2(-1., 0.));
+  return (!canSlideRight(uv) && !canSlideLeft(uv) && !canFallToRight(uv) && canFallToOffset(uv, vec2(-1., 0.)));
 }

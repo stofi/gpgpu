@@ -50,7 +50,7 @@ export default function FluidMaterial(props: {
 
   return (
     <CustomShaderMaterial
-      color={props.color}
+      color={props.color ?? 'white'}
       map={props.map}
       baseMaterial={THREE.MeshStandardMaterial}
       ref={materialRef}
