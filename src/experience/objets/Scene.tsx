@@ -19,7 +19,7 @@ export default function Scene() {
       options: ['fluid', 'slime', 'gameOfLife', 'sand'],
     },
     resolution: {
-      value: 512 as TResolutions,
+      value: 128 as TResolutions,
       options: [32, 64, 128, 256, 512, 1024, 2048, 4096] as TResolutions[],
     },
     restart: button(() => {
