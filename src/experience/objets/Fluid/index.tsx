@@ -147,7 +147,10 @@ export default function Fluid({ width = 1024 }: FluidProps) {
       const context = canvas.getContext('2d')
 
       if (context) {
-        context.drawImage(img, 0, 0, width, width)
+        context.save()
+        context.scale(1, -1)
+
+        context.drawImage(img, 0, 0, width, -1 * width)
 
         const imageData = context.getImageData(
           0,
@@ -155,7 +158,7 @@ export default function Fluid({ width = 1024 }: FluidProps) {
           canvas.width,
           canvas.height,
         )
-
+        context.restore()
         setSkeletonImageData(imageData)
       }
     }

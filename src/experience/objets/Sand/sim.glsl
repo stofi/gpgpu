@@ -22,17 +22,33 @@ float getNoise(vec2 uv) {
   return (n.x + n.y + n.z + n.w) / 4.;
 }
 
+bool _canMoveDown(vec2 uv) {
+  return canFallDown(uv);
+}
+bool _canMoveDownRight(vec2 uv) {
+  return canFallToRight(uv);
+}
+bool _canMoveDownLeft(vec2 uv) {
+  return canFallToLeft(uv);
+}
+bool _canMoveRight(vec2 uv) {
+  return canSlideRight(uv);
+}
+bool _canMoveLeft(vec2 uv) {
+  return canSlideLeft(uv);
+}
+
 bool willMove(vec2 uv) {
-  bool moveDown = texture2D(textureMoveDown, uv).x > 0.;
-  bool moveDownRight = texture2D(textureMoveDownRight, uv).x > 0.;
-  bool moveDownLeft = texture2D(textureMoveDownLeft, uv).x > 0.;
-  bool moveRight = texture2D(textureMoveRight, uv).x > 0.;
-  bool moveLeft = texture2D(textureMoveLeft, uv).x > 0.;
+  bool moveDown = _canMoveDown(uv);
+  bool moveDownRight = _canMoveDownRight(uv);
+  bool moveDownLeft = _canMoveDownLeft(uv);
+  bool moveRight = _canMoveRight(uv);
+  bool moveLeft = _canMoveLeft(uv);
   if(moveDown)
     return true;
-  if(enableDiagonal && (moveDownRight || moveDownLeft))
-    return true;
   if(enableSlide && (moveRight || moveLeft))
+    return true;
+  if(enableDiagonal && (moveDownRight || moveDownLeft))
     return true;
 
   return false;
@@ -45,26 +61,32 @@ vec4 cellToMoveInto(vec2 uv) {
   vec2 leftAboveUv = uv + pixelSize * vec2(-1., 1.);
   vec2 rightAboveUv = uv + pixelSize * vec2(1., 1.);
 
-  bool aboveMoveDown = texture2D(textureMoveDown, aboveUv).x > 0.;
-  bool aboveRightMoveDownLeft = texture2D(textureMoveDownLeft, rightAboveUv).x > 0.;
-  bool aboveLeftMoveDownRight = texture2D(textureMoveDownRight, leftAboveUv).x > 0.;
-  bool leftMoveRight = texture2D(textureMoveRight, leftUv).x > 0.;
-  bool rightMoveLeft = texture2D(textureMoveLeft, rightUv).x > 0.;
+  bool aboveMoveDown = _canMoveDown(aboveUv);
+  bool aboveRightMoveDownLeft = _canMoveDownLeft(rightAboveUv);
+  bool aboveLeftMoveDownRight = _canMoveDownRight(leftAboveUv);
+  bool leftMoveRight = _canMoveRight(leftUv);
+  bool rightMoveLeft = _canMoveLeft(rightUv);
 
-  if(aboveMoveDown)
+  bool aboveOut = aboveUv.y > 1.;
+  bool leftOut = leftUv.x < 0.;
+  bool rightOut = rightUv.x > 1.;
+  bool leftAboveOut = leftAboveUv.x < 0. || leftAboveUv.y > 1.;
+  bool rightAboveOut = rightAboveUv.x > 1. || rightAboveUv.y > 1.;
+
+  if(aboveMoveDown && !aboveOut)
     return texture2D(textureValue, aboveUv);
 
-  if(enableDiagonal && (aboveRightMoveDownLeft || aboveLeftMoveDownRight)) {
-    if(aboveLeftMoveDownRight)
-      return texture2D(textureValue, leftAboveUv);
-    if(aboveRightMoveDownLeft)
-      return texture2D(textureValue, rightAboveUv);
-  }
   if(enableSlide && (leftMoveRight || rightMoveLeft)) {
-    if(leftMoveRight)
+    if(leftMoveRight && !leftOut)
       return texture2D(textureValue, leftUv);
-    if(rightMoveLeft)
+    if(rightMoveLeft && !rightOut)
       return texture2D(textureValue, rightUv);
+  }
+  if(enableDiagonal && (aboveRightMoveDownLeft || aboveLeftMoveDownRight)) {
+    if(aboveLeftMoveDownRight && !leftAboveOut)
+      return texture2D(textureValue, leftAboveUv);
+    if(aboveRightMoveDownLeft && !rightAboveOut)
+      return texture2D(textureValue, rightAboveUv);
   }
   return result;
 }

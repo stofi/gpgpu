@@ -6,16 +6,22 @@ export type TUniform = {
   [uniform: string]: THREE.IUniform<any>
 }
 
-export type TControl = {
-  value: number | THREE.Vector2 | THREE.Vector3 | boolean | string
-  min?: number
-  max?: number
-  step?: number
-  options?: Record<string, number>
-  uniformOnly?: boolean
-  controlOnly?: boolean
-  label?: string
-}
+export type TControl =
+  | {
+      value: number | THREE.Vector2 | THREE.Vector3 | boolean | string
+      min?: number
+      max?: number
+      step?: number
+      options?: Record<string, number>
+      uniformOnly?: boolean
+      controlOnly?: boolean
+      label?: string
+    }
+  | {
+      image: any
+      controlOnly: true
+      uniformOnly: false
+    }
 
 export class ControlsFactory<T extends string> {
   constructor(public options: Record<T, TControl>) {
