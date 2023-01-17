@@ -17,7 +17,7 @@ export default function Experience(props: { enableDebug?: boolean }) {
         flat={true}
         linear={false}
         dpr={1}
-        gl={{ antialias: false }}
+        gl={{ antialias: false, alpha: true }}
         camera={{
           position: [0, 0, 10],
         }}

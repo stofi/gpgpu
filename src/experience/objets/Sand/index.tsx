@@ -5,7 +5,7 @@ import {
 } from 'three/examples/jsm/misc/GPUComputationRenderer'
 import { useEffect, useMemo, useState } from 'react'
 
-import { Environment, OrbitControls } from '@react-three/drei'
+import { Environment, Html, OrbitControls } from '@react-three/drei'
 import { ThreeEvent, useFrame } from '@react-three/fiber'
 
 import { useControls } from 'leva'
@@ -14,6 +14,12 @@ import type { Schema } from 'leva/src/types'
 import { ControlsFactory, TControl, TUniform } from '../../../ControlsFactory'
 // const WIDTH = 1024
 import { sRGBChannelToLinear } from '../../../utils'
+import debugFragment from './debug.glsl'
+import moveDownFragment from './move/moveDown.glsl'
+import moveDownLeftFragment from './move/moveDownLeft.glsl'
+import moveDownRightFragment from './move/moveDownRight.glsl'
+import moveLeftFragment from './move/moveLeft.glsl'
+import moveRightFragment from './move/moveRight.glsl'
 import simFragment from './sim.glsl'
 import solidFragment from './solid.glsl'
 
@@ -92,12 +98,20 @@ const controlsOptions = {
     label: 'Diagonal',
   },
   enableSlide: {
-    value: false,
+    value: true,
     label: 'Slide',
+  },
+  enableFall: {
+    value: true,
+    label: 'Fall',
   },
   tick: {
     value: 0,
     uniformOnly: true,
+  },
+  useDebugTextures: {
+    value: false,
+    controlOnly: true,
   },
 }
 
@@ -110,13 +124,24 @@ export default function Sand({ width = 1024 }: SandProps) {
   const [computeRenderer, setComputeRenderer] =
     useState<GPUComputationRenderer | null>(null)
 
-  const [planeTexture, setPlaneTexture] = useState<THREE.Texture | null>(null)
-
+  const [stateUniforms, setComputeUniforms] = useState(
+    controlsFactory.getUniforms(),
+  )
   const [valueVariable, setValueVariable] = useState<Variable | null>(null)
   const [solidVariable, setSolidVariable] = useState<Variable | null>(null)
 
-  const [stateUniforms, setComputeUniforms] = useState(
-    controlsFactory.getUniforms(),
+  const [moveDownVariable, setMoveDownVariable] = useState<Variable | null>(
+    null,
+  )
+
+  const [moveDownRightVariable, setMoveDownRightVariable] =
+    useState<Variable | null>(null)
+
+  const [moveDownLeftVariable, setMoveDownLeftVariable] =
+    useState<Variable | null>(null)
+
+  const [moveRightVariable, setMoveRightVariable] = useState<Variable | null>(
+    null,
   )
 
   const initGpuCompute = async (gl: THREE.WebGLRenderer) => {
@@ -128,8 +153,25 @@ export default function Sand({ width = 1024 }: SandProps) {
 
     const dtValue = gpuCompute.createTexture()
     const dtSolid = gpuCompute.createTexture()
+
+    const moveDown = gpuCompute.createTexture()
+    const moveDownRight = gpuCompute.createTexture()
+    const moveDownLeft = gpuCompute.createTexture()
+    const moveRight = gpuCompute.createTexture()
+    const moveLeft = gpuCompute.createTexture()
+
+    const dtDebug = gpuCompute.createTexture()
+
     await fillValueTexture(dtValue)
     await fillSolidTexture(dtSolid)
+
+    await fillSolidTexture(moveDown)
+    await fillSolidTexture(moveDownRight)
+    await fillSolidTexture(moveDownLeft)
+    await fillSolidTexture(moveRight)
+    await fillSolidTexture(moveLeft)
+
+    await fillSolidTexture(dtDebug)
 
     const valueVariable = gpuCompute.addVariable(
       'textureValue',
@@ -143,14 +185,119 @@ export default function Sand({ width = 1024 }: SandProps) {
       dtSolid,
     )
 
-    setValueVariable(valueVariable)
-    setSolidVariable(solidVariable)
+    const moveDownVariable = gpuCompute.addVariable(
+      'textureMoveDown',
+      moveDownFragment,
+      moveDown,
+    )
+
+    const moveDownRightVariable = gpuCompute.addVariable(
+      'textureMoveDownRight',
+      moveDownRightFragment,
+      moveDownRight,
+    )
+
+    const moveDownLeftVariable = gpuCompute.addVariable(
+      'textureMoveDownLeft',
+      moveDownLeftFragment,
+      moveDownLeft,
+    )
+
+    const moveRightVariable = gpuCompute.addVariable(
+      'textureMoveRight',
+      moveRightFragment,
+      moveRight,
+    )
+
+    const moveLeftVariable = gpuCompute.addVariable(
+      'textureMoveLeft',
+      moveLeftFragment,
+      moveLeft,
+    )
+
+    const debugVariable = gpuCompute.addVariable(
+      'textureDebug',
+      debugFragment,
+      dtDebug,
+    )
 
     gpuCompute.setVariableDependencies(valueVariable, [
       valueVariable,
       solidVariable,
+      moveDownVariable,
+      moveDownRightVariable,
+      moveDownLeftVariable,
+      moveRightVariable,
+      moveLeftVariable,
     ])
-    gpuCompute.setVariableDependencies(solidVariable, [solidVariable])
+
+    gpuCompute.setVariableDependencies(solidVariable, [
+      valueVariable,
+      solidVariable,
+    ])
+
+    gpuCompute.setVariableDependencies(moveDownVariable, [
+      moveDownVariable,
+      valueVariable,
+      solidVariable,
+    ])
+
+    gpuCompute.setVariableDependencies(moveDownRightVariable, [
+      moveDownVariable,
+      moveDownRightVariable,
+      moveDownLeftVariable,
+      valueVariable,
+      solidVariable,
+    ])
+
+    gpuCompute.setVariableDependencies(moveDownLeftVariable, [
+      moveDownVariable,
+      moveDownRightVariable,
+      moveDownLeftVariable,
+      valueVariable,
+      solidVariable,
+    ])
+
+    gpuCompute.setVariableDependencies(moveRightVariable, [
+      moveDownVariable,
+      moveDownRightVariable,
+      moveDownLeftVariable,
+      moveRightVariable,
+      moveLeftVariable,
+      valueVariable,
+      solidVariable,
+    ])
+
+    gpuCompute.setVariableDependencies(moveLeftVariable, [
+      moveDownVariable,
+      moveDownRightVariable,
+      moveDownLeftVariable,
+      moveRightVariable,
+      moveLeftVariable,
+      valueVariable,
+      solidVariable,
+    ])
+
+    gpuCompute.setVariableDependencies(debugVariable, [
+      valueVariable,
+      solidVariable,
+      moveDownVariable,
+      moveDownRightVariable,
+      moveDownLeftVariable,
+      moveRightVariable,
+      moveLeftVariable,
+      debugVariable,
+    ])
+
+    setValueVariable(valueVariable)
+    setSolidVariable(solidVariable)
+    setMoveDownVariable(moveDownVariable)
+    setMoveDownRightVariable(moveDownRightVariable)
+    setMoveDownLeftVariable(moveDownLeftVariable)
+    setMoveRightVariable(moveRightVariable)
+    setMoveLeftVariable(moveLeftVariable)
+
+    setDebugVariable(debugVariable)
 
     Object.assign(
       valueVariable.material.uniforms,
@@ -159,6 +306,36 @@ export default function Sand({ width = 1024 }: SandProps) {
 
     Object.assign(
       solidVariable.material.uniforms,
+      controlsFactory.getUniforms(),
+    )
+
+    Object.assign(
+      moveDownVariable.material.uniforms,
+      controlsFactory.getUniforms(),
+    )
+
+    Object.assign(
+      moveDownRightVariable.material.uniforms,
+      controlsFactory.getUniforms(),
+    )
+
+    Object.assign(
+      moveDownLeftVariable.material.uniforms,
+      controlsFactory.getUniforms(),
+    )
+
+    Object.assign(
+      moveRightVariable.material.uniforms,
+      controlsFactory.getUniforms(),
+    )
+
+    Object.assign(
+      moveLeftVariable.material.uniforms,
+      controlsFactory.getUniforms(),
+    )
+
+    Object.assign(
+      debugVariable.material.uniforms,
       controlsFactory.getUniforms(),
     )
 
@@ -244,6 +421,36 @@ export default function Sand({ width = 1024 }: SandProps) {
     }
   }
 
+  const [moveLeftVariable, setMoveLeftVariable] = useState<Variable | null>(
+    null,
+  )
+
+  const [valueTexture, setValueTexture] = useState<THREE.Texture | null>(null)
+  const [solidTexture, setSolidTexture] = useState<THREE.Texture | null>(null)
+
+  const [moveDownTexture, setMoveDownTexture] = useState<THREE.Texture | null>(
+    null,
+  )
+
+  const [moveDownRightTexture, setMoveDownRightTexture] =
+    useState<THREE.Texture | null>(null)
+
+  const [moveDownLeftTexture, setMoveDownLeftTexture] =
+    useState<THREE.Texture | null>(null)
+
+  const [moveRightTexture, setMoveRightTexture] =
+    useState<THREE.Texture | null>(null)
+
+  const [moveLeftTexture, setMoveLeftTexture] = useState<THREE.Texture | null>(
+    null,
+  )
+
+  const [debugTexture, setDebugTexture] = useState<THREE.Texture | null>(null)
+
+  const [debugVariable, setDebugVariable] = useState<Variable | null>(null)
+
+  const [internalDebugTexture, setInternalDebugTexture] = useState(false)
+
   useFrame(async (state) => {
     if (!skeletonImageData) return
 
@@ -260,6 +467,7 @@ export default function Sand({ width = 1024 }: SandProps) {
       stateUniforms.brushColorRandom.value = controls.brushColorRandom
       stateUniforms.enableDiagonal.value = controls.enableDiagonal
       stateUniforms.enableSlide.value = controls.enableSlide
+      stateUniforms.enableFall.value = controls.enableFall
       stateUniforms.tick.value += 1
 
       stateUniforms.brushColor.value = new THREE.Color(
@@ -286,10 +494,57 @@ export default function Sand({ width = 1024 }: SandProps) {
         setDelay(controls.frameDelay)
       }
 
-      if (valueVariable && !planeTexture) {
-        setPlaneTexture(
+      if (valueVariable && !valueTexture) {
+        setValueTexture(
           computeRenderer.getCurrentRenderTarget(valueVariable).texture,
         )
+      }
+
+      if (controls.useDebugTextures) {
+        if (solidVariable && !solidTexture) {
+          setSolidTexture(
+            computeRenderer.getCurrentRenderTarget(solidVariable).texture,
+          )
+        }
+
+        if (moveDownVariable && !moveDownTexture) {
+          setMoveDownTexture(
+            computeRenderer.getCurrentRenderTarget(moveDownVariable).texture,
+          )
+        }
+
+        if (moveDownRightVariable && !moveDownRightTexture) {
+          setMoveDownRightTexture(
+            computeRenderer.getCurrentRenderTarget(moveDownRightVariable)
+              .texture,
+          )
+        }
+
+        if (moveDownLeftVariable && !moveDownLeftTexture) {
+          setMoveDownLeftTexture(
+            computeRenderer.getCurrentRenderTarget(moveDownLeftVariable)
+              .texture,
+          )
+        }
+
+        if (moveRightVariable && !moveRightTexture) {
+          setMoveRightTexture(
+            computeRenderer.getCurrentRenderTarget(moveRightVariable).texture,
+          )
+        }
+
+        if (moveLeftVariable && !moveLeftTexture) {
+          setMoveLeftTexture(
+            computeRenderer.getCurrentRenderTarget(moveLeftVariable).texture,
+          )
+        }
+
+        if (debugVariable && !debugTexture) {
+          setDebugTexture(
+            computeRenderer.getCurrentRenderTarget(debugVariable).texture,
+          )
+        }
+        setInternalDebugTexture(true)
       }
     }
   })
@@ -327,13 +582,72 @@ export default function Sand({ width = 1024 }: SandProps) {
   }, [])
 
   return (
-    <>
-      {computeRenderer && planeTexture && (
+    <group>
+      {computeRenderer && valueTexture && (
         <mesh onClick={handleClick} onPointerMove={handleMove}>
           <planeGeometry args={[10, 10]} />
-          <meshBasicMaterial side={2} map={planeTexture} />
+          <meshBasicMaterial side={2} map={valueTexture} />
         </mesh>
       )}
-    </>
+      {controls.useDebugTextures && internalDebugTexture && (
+        <>
+          <mesh position={[0, 12, 0]}>
+            <Html center position={[0, -6, 0]}>
+              <div className='text-center text-white'>solidTexture</div>
+            </Html>
+            <planeGeometry args={[10, 10]} />
+            <meshBasicMaterial side={2} map={solidTexture} />
+          </mesh>
+
+          <mesh position={[0, -12, 0]}>
+            <Html center position={[0, -6, 0]}>
+              <div className='text-center text-white'>moveDown</div>
+            </Html>
+            <planeGeometry args={[10, 10]} />
+            <meshBasicMaterial side={2} map={moveDownTexture} />
+          </mesh>
+
+          <mesh position={[12, -12, 0]}>
+            <Html center position={[0, -6, 0]}>
+              <div className='text-center text-white'>moveDownRight</div>
+            </Html>
+            <planeGeometry args={[10, 10]} />
+            <meshBasicMaterial side={2} map={moveDownRightTexture} />
+          </mesh>
+
+          <mesh position={[-12, -12, 0]}>
+            <Html center position={[0, -6, 0]}>
+              <div className='text-center text-white'>moveDownLeft</div>
+            </Html>
+            <planeGeometry args={[10, 10]} />
+            <meshBasicMaterial side={2} map={moveDownLeftTexture} />
+          </mesh>
+
+          <mesh position={[12, 0, 0]}>
+            <Html center position={[0, -6, 0]}>
+              <div className='text-center text-white'>moveRight</div>
+            </Html>
+            <planeGeometry args={[10, 10]} />
+            <meshBasicMaterial side={2} map={moveRightTexture} />
+          </mesh>
+
+          <mesh position={[-12, 0, 0]}>
+            <Html center position={[0, -6, 0]}>
+              <div className='text-center text-white'>moveLeft</div>
+            </Html>
+            <planeGeometry args={[10, 10]} />
+            <meshBasicMaterial side={2} map={moveLeftTexture} />
+          </mesh>
+
+          <mesh position={[-12, 12, 0]}>
+            <Html center position={[0, -6, 0]}>
+              <div className='text-center text-white'>debug</div>
+            </Html>
+            <planeGeometry args={[10, 10]} />
+            <meshBasicMaterial side={2} map={debugTexture} />
+          </mesh>
+        </>
+      )}
+    </group>
   )
 }

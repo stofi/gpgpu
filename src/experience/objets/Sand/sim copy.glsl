@@ -23,17 +23,12 @@ float getNoise(vec2 uv) {
 }
 
 bool willMove(vec2 uv) {
-  bool moveDown = texture2D(textureMoveDown, uv).x > 0.;
-  bool moveDownRight = texture2D(textureMoveDownRight, uv).x > 0.;
-  bool moveDownLeft = texture2D(textureMoveDownLeft, uv).x > 0.;
-  bool moveRight = texture2D(textureMoveRight, uv).x > 0.;
-  bool moveLeft = texture2D(textureMoveLeft, uv).x > 0.;
-  if(moveDown)
+  if(canFallDown(uv) || (enableDiagonal && (canFallToRight(uv) || canFallToLeft(uv)))) {
     return true;
-  if(enableDiagonal && (moveDownRight || moveDownLeft))
+  }
+  if(enableSlide && (canSlideRightFirst(uv) || canSlideLeft(uv))) {
     return true;
-  if(enableSlide && (moveRight || moveLeft))
-    return true;
+  }
 
   return false;
 }
@@ -44,27 +39,26 @@ vec4 cellToMoveInto(vec2 uv) {
   vec2 rightUv = uv + pixelSize * vec2(1., 0.);
   vec2 leftAboveUv = uv + pixelSize * vec2(-1., 1.);
   vec2 rightAboveUv = uv + pixelSize * vec2(1., 1.);
-
-  bool aboveMoveDown = texture2D(textureMoveDown, aboveUv).x > 0.;
-  bool aboveRightMoveDownLeft = texture2D(textureMoveDownLeft, rightAboveUv).x > 0.;
-  bool aboveLeftMoveDownRight = texture2D(textureMoveDownRight, leftAboveUv).x > 0.;
-  bool leftMoveRight = texture2D(textureMoveRight, leftUv).x > 0.;
-  bool rightMoveLeft = texture2D(textureMoveLeft, rightUv).x > 0.;
-
-  if(aboveMoveDown)
+  if(aboveUv.y > 1.)
+    return result;
+  if(canFallDown(aboveUv)) {
     return texture2D(textureValue, aboveUv);
-
-  if(enableDiagonal && (aboveRightMoveDownLeft || aboveLeftMoveDownRight)) {
-    if(aboveLeftMoveDownRight)
-      return texture2D(textureValue, leftAboveUv);
-    if(aboveRightMoveDownLeft)
-      return texture2D(textureValue, rightAboveUv);
   }
-  if(enableSlide && (leftMoveRight || rightMoveLeft)) {
-    if(leftMoveRight)
+  if(enableDiagonal) {
+    if(canFallToRight(leftAboveUv)) {
+      return texture2D(textureValue, leftAboveUv);
+    }
+    if(canFallToLeft(rightAboveUv)) {
+      return texture2D(textureValue, rightAboveUv);
+    }
+  }
+  if(enableSlide) {
+    if(canSlideRightFirst(leftUv)) {
       return texture2D(textureValue, leftUv);
-    if(rightMoveLeft)
+    }
+    if(canSlideLeft(rightUv)) {
       return texture2D(textureValue, rightUv);
+    }
   }
   return result;
 }

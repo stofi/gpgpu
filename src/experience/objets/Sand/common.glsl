@@ -47,10 +47,10 @@ bool basicFallCheckOffset(vec2 uv, vec2 offset) {
   if(!isCellActive(uv))
     return false;
 
-  vec2 aboveUv = uv + pixelSize * vec2(0., 1.);
-  bool aboveOutOfBounds = aboveUv.y > 1.;
-  if(isCellActive(aboveUv) && !isSolid(aboveUv) && !aboveOutOfBounds)
-    return false;
+  // vec2 aboveUv = uv + pixelSize * vec2(0., 1.);
+  // bool aboveOutOfBounds = aboveUv.y > 1.;
+  // if(isCellActive(aboveUv) && !isSolid(aboveUv) && !aboveOutOfBounds)
+  //   return false;
 
   vec2 offsetUv = uv + pixelSize * offset;
   // if offsetUv is out of bounds, it can't fall
@@ -131,9 +131,33 @@ bool slideOffsetCheck(vec2 uv, vec2 offset) {
   if(isCellActive(offsetUv))
     return false;
 
+  vec2 aboveUv = uv + pixelSize * vec2(0., 1.);
+  // if cellAbove is active, not solid and not out of bounds, it can't slide
+  if(isCellActive(aboveUv) && !isSolid(aboveUv) && aboveUv.y < 1.)
+    return false;
+
   vec2 aboveOffsetUv = uv + pixelSize * (offset + vec2(0., 1.));
   // if cellAboveOffset is active, it can't slide
   if(isCellActive(aboveOffsetUv) && !isSolid(aboveOffsetUv))
+    return false;
+
+  vec2 offset2Uv = uv + pixelSize * (offset * 2.);
+  // if cellOffset2 is active, not solid and not out of bounds, it can't slide
+  if(isCellActive(offset2Uv) && !isSolid(offset2Uv) && offset2Uv.x > 0. && offset2Uv.x < 1.)
+    return false;
+
+  /* 
+    We need to check if the cell plus offset * 2 + vec2(0., 1.), we will cal it aboveOffset2 will fall to the offset cell.
+    If it will, we can't slide. 
+    If the cell aboveOffset2 is solid, or out of bounds we can slide.
+  */
+  vec2 aboveOffset2Uv = uv + pixelSize * (offset * 2. + vec2(0., 1.));
+  bool aboveOffset2OutOfBounds = aboveOffset2Uv.y > 1. || aboveOffset2Uv.x < 0. || aboveOffset2Uv.x > 1.;
+  vec2 reverseOffset = vec2(-offset.x, offset.y);
+  bool aboveOffset2Solid = isSolid(aboveOffset2Uv);
+  bool aboveOffset2Active = isCellActive(aboveOffset2Uv);
+  bool aboveOffset2Condition = !(aboveOffset2OutOfBounds || aboveOffset2Solid && !aboveOffset2Active);
+  if(aboveOffset2Condition && canFallToOffset(uv, reverseOffset))
     return false;
 
   vec2 bellowUv = uv + pixelSize * vec2(0., -1.);
