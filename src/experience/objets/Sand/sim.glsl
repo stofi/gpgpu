@@ -10,6 +10,10 @@ const vec2 pixelSize = vec2(1.) / resolution.xy;
 const int mask = 1;
 
 bool willMove(vec2 uv) {
+  if(!isCellActive(uv))
+    return true;
+  if(isSolid(uv))
+    return true;
   bool moveDown = canFallDown(uv);
   bool moveDownRight = canFallToRight(uv);
   bool moveDownLeft = canFallToLeft(uv);
@@ -53,15 +57,15 @@ vec4 sim() {
   bool leftAboveOut = leftAboveUv.x < 0. || leftAboveUv.y > 1.;
   bool rightAboveOut = rightAboveUv.x > 1. || rightAboveUv.y > 1.;
 
-  if(!aboveOut && aboveMoveDown)
+  if(!aboveOut && aboveMoveDown && !isSolid(aboveUv))
     result = texture2D(textureValue, aboveUv);
-  else if(enableSlide && !leftOut && leftMoveRight)
+  else if(enableSlide && !leftOut && leftMoveRight && !isSolid(leftUv))
     result = texture2D(textureValue, leftUv);
-  else if(enableSlide && !rightOut && rightMoveLeft)
+  else if(enableSlide && !rightOut && rightMoveLeft && !isSolid(rightUv))
     result = texture2D(textureValue, rightUv);
-  else if(enableDiagonal && !leftAboveOut && aboveLeftMoveDownRight)
+  else if(enableDiagonal && !leftAboveOut && aboveLeftMoveDownRight && !isSolid(leftAboveUv))
     result = texture2D(textureValue, leftAboveUv);
-  else if(enableDiagonal && !rightAboveOut && aboveRightMoveDownLeft)
+  else if(enableDiagonal && !rightAboveOut && aboveRightMoveDownLeft && !isSolid(rightAboveUv))
     result = texture2D(textureValue, rightAboveUv);
 
   if(isCellActive(uv) || result != vec4(0.0, 0.0, 0.0, 0.0))

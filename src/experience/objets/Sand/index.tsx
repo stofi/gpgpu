@@ -127,7 +127,9 @@ const controlsOptions: Record<string, TControl> = {
 const controlsFactory = new ControlsFactory(controlsOptions)
 
 export default function Sand({ width = 1024 }: SandProps) {
-  const controls = useControls('Falling Sand', controlsFactory.getControls())
+  const [controls, setControls] = useControls('Falling Sand', () =>
+    controlsFactory.getControls(),
+  )
 
   // const test = useControls('Test', { test: 0 })
 
@@ -317,10 +319,21 @@ export default function Sand({ width = 1024 }: SandProps) {
       setDelay(d - 1)
 
       if (delay < 0) {
+        const now = performance.now()
+
         for (let i = 0; i < controls.iterations; i++) {
           computeRenderer.compute()
           stateUniforms.tick.value += 1
         }
+        const elapsed = performance.now() - now
+        const iters = controls.iterations as number
+        const perStep = elapsed / iters
+        const stepsPerSecond = 1000 / perStep
+        const stepsPerFrame = stepsPerSecond / 60
+        const maxIterations = Math.floor(stepsPerFrame)
+        const iterations = Math.min(iters, maxIterations)
+        // controls.iterations = iterations
+        setControls({ iterations })
         stateUniforms.isClicked.value = false
         stateUniforms.click.value = new THREE.Vector2(0, 0)
 

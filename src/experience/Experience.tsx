@@ -24,7 +24,7 @@ export default function Experience(props: { enableDebug?: boolean }) {
       >
         {props.enableDebug && (
           <>
-            {/* <Perf position='top-left' /> */}
+            <Perf position='top-left' />
             <PerformanceMonitor />
           </>
         )}
