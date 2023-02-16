@@ -7,6 +7,7 @@ import { button, useControls } from 'leva'
 
 import Fluid from './Fluid'
 import GameOfLife from './GameOfLife'
+import MapGenerator from './MapGenerator'
 import Sand from './Sand'
 import Slime from './Slime'
 
@@ -15,8 +16,8 @@ type TResolutions = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096
 export default function Scene() {
   const { experiment, resolution } = useControls({
     experiment: {
-      value: 'sand',
-      options: ['fluid', 'slime', 'gameOfLife', 'sand'],
+      value: 'map',
+      options: ['fluid', 'slime', 'gameOfLife', 'sand', 'map'],
     },
     resolution: {
       value: 128 as TResolutions,
@@ -45,6 +46,8 @@ export default function Scene() {
       <GameOfLife width={resolution} />
     ) : experiment === 'sand' ? (
       <Sand width={resolution} />
+    ) : experiment === 'map' ? (
+      <MapGenerator width={resolution} />
     ) : null
   ) : null
 
