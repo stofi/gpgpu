@@ -96,28 +96,40 @@ void main() {
 
   if(upAndUp2White && downAndDown2Black && leftAndLeft2Black && rightAndRight2Black && (upLeftWhite || upRightWhite) && (downLeftBlack && downRightBlack)) {
     result = up;
+    result.rgb *= .99;
   } else if(downAndDown2White && upAndUp2Black && leftAndLeft2Black && rightAndRight2Black && (downLeftWhite || downRightWhite) && (upLeftBlack && upRightBlack)) {
     result = down;
+    result.rgb *= .99;
   } else if(leftAndLeft2White && rightAndRight2Black && upAndUp2Black && downAndDown2Black && (upLeftWhite || downLeftWhite) && (upRightBlack && downRightBlack)) {
     result = left;
+    result.rgb *= .99;
   } else if(rightAndRight2White && leftAndLeft2Black && upAndUp2Black && downAndDown2Black && (upRightWhite || downRightWhite) && (upLeftBlack && downLeftBlack)) {
     result = right;
+    result.rgb *= .99;
   } else if(upAndUp2White && leftAndLeft2White && upLeftWhite && downAndDown2Black && rightAndRight2Black && downLeftBlack && downRightBlack) {
     result = upLeft;
+    result.rgb *= .99;
   } else if(upAndUp2White && rightAndRight2White && upRightWhite && downAndDown2Black && leftAndLeft2Black && downLeftBlack && downRightBlack) {
     result = upRight;
+    result.rgb *= .99;
   } else if(downAndDown2White && leftAndLeft2White && downLeftWhite && upAndUp2Black && rightAndRight2Black && upLeftBlack && upRightBlack) {
     result = downLeft;
+    result.rgb *= .99;
   } else if(downAndDown2White && rightAndRight2White && downRightWhite && upAndUp2Black && leftAndLeft2Black && upLeftBlack && upRightBlack) {
     result = downRight;
+    result.rgb *= .99;
   } else if(upWhite && upLeftWhite && upRightWhite && downBlack && down2Black && downRightBlack && downLeftBlack) {
     result = up;
+    result.rgb *= .99;
   } else if(downWhite && downLeftWhite && downRightWhite && upBlack && up2Black && upRightBlack && upLeftBlack) {
     result = down;
+    result.rgb *= .99;
   } else if(rightWhite && upRightWhite && downRightWhite && leftBlack && left2Black && upLeftBlack && downLeftBlack) {
     result = right;
+    result.rgb *= .99;
   } else if(leftWhite && upLeftWhite && downLeftWhite && rightBlack && right2Black && upRightBlack && downRightBlack) {
     result = left;
+    result.rgb *= .99;
 
   } else if(result.a < 1.) {
     result = vec4(0);
